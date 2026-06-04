@@ -20,10 +20,21 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
     if (token) {
         defaultHeaders["Authorization"] = `Bearer ${token}`;
     } else if (typeof window !== "undefined") {
-        // Côté navigateur : récupère automatiquement le token dans le localStorage
-        const savedToken = localStorage.getItem("faststore_token");
-        if (savedToken) {
-            defaultHeaders["Authorization"] = `Bearer ${savedToken}`;
+        const hostname = window.location.hostname;
+
+        // 1. Détection de l'espace d'administration Super Admin
+        if (hostname.startsWith("admin.")) {
+            const adminToken = localStorage.getItem("faststore_admin_token");
+            if (adminToken) {
+                defaultHeaders["Authorization"] = `Bearer ${adminToken}`;
+            }
+        }
+        // 2. Détection de l'espace Marchand
+        else if (hostname.startsWith("marchand.")) {
+            const merchantToken = localStorage.getItem("faststore_merchant_token");
+            if (merchantToken) {
+                defaultHeaders["Authorization"] = `Bearer ${merchantToken}`;
+            }
         }
     }
 
