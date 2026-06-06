@@ -1,4 +1,4 @@
-// src/app/merchant/login/page.tsx
+// app/merchant/login/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";

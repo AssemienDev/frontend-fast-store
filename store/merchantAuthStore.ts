@@ -13,13 +13,28 @@ interface MerchantProfile {
     is_verified: boolean;
 }
 
+interface ShopProfile {
+    id: string;
+    name: string;
+    slug: string;
+    currency: string;
+    theme_style: string;
+    theme_settings: any;
+    whatsapp_number: string | null;
+    address: string | null;
+    business_category: string | null;
+}
+
+
 interface MerchantAuthState {
     merchant: MerchantProfile | null;
+    shop: ShopProfile | null;
     token: string | null;
     isAuthenticated: boolean;
 
     // Actions
     setCredentials: (merchant: MerchantProfile, token: string) => void;
+    setShop: (shop: ShopProfile) => void;
     clearCredentials: () => void;
     updateMerchant: (updatedFields: Partial<MerchantProfile>) => void;
 }
@@ -28,6 +43,7 @@ export const useMerchantAuthStore = create<MerchantAuthState>()(
     persist(
         (set) => ({
             merchant: null,
+            shop: null,
             token: null,
             isAuthenticated: false,
 
@@ -36,6 +52,10 @@ export const useMerchantAuthStore = create<MerchantAuthState>()(
                 if (typeof window !== "undefined") {
                     localStorage.setItem("faststore_merchant_token", token);
                 }
+            },
+
+            setShop: (shop) => {
+                set({ shop });
             },
 
             clearCredentials: () => {
