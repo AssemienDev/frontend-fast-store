@@ -12,7 +12,7 @@ import {
     Settings,
     Bell,
     Menu,
-    LogOut, ChartBarStacked, BadgePercent, Megaphone, ListOrdered, UserRound, Landmark
+    LogOut, ChartBarStacked, BadgePercent, Megaphone, ListOrdered, UserRound, Landmark, DollarSign
 } from "lucide-react";
 import Link from "next/link";
 import {apiFetch} from "@/lib/api";
@@ -27,6 +27,7 @@ export default function MerchantLayout({
     const pathname = usePathname();
     const { merchant, shop, setShop, isAuthenticated, clearCredentials } = useMerchantAuthStore();
     const [mounted, setMounted] = useState(false);
+    const [planName, setPlanName] = useState<string>("Chargement...");
 
     useEffect(() => {
         setMounted(true);
@@ -45,12 +46,24 @@ export default function MerchantLayout({
         const shouldLoadShop = isAuthenticated && merchant?.is_verified && !isAuthPage && !shop;
 
         if (shouldLoadShop) {
-            apiFetch<any>("/merchant/shop")
-                .then((shopData) => {
-                    setShop(shopData); // Enregistre la boutique de façon globale
+            // 1. Charger les détails de la boutique
+            if (!shop) {
+                apiFetch<any>("/merchant/shop")
+                    .then((shopData) => {
+                        setShop(shopData);
+                    })
+                    .catch((err) => {
+                        console.error("Échec du chargement de la boutique:", err);
+                    });
+            }
+
+            // 2. NOUVEAU : Récupérer dynamiquement le forfait d'abonnement du marchand par l'API
+            apiFetch<any>("/merchant/subscription")
+                .then((subData) => {
+                    setPlanName(subData.plan_name);
                 })
-                .catch((err) => {
-                    console.error("Échec du chargement de la boutique:", err);
+                .catch(() => {
+                    setPlanName("Forfait Gratuit");
                 });
         }
     }, [isAuthenticated, merchant, pathname, shop, setShop]);
@@ -59,7 +72,7 @@ export default function MerchantLayout({
 
     const handleLogout = () => {
         clearCredentials();
-        router.push("/register");
+        router.push("/");
     };
 
     // SÉCURITÉ DE VÉRIFICATION DE L'ONBOARDING COMPLET :
@@ -114,8 +127,8 @@ export default function MerchantLayout({
                         <span className="text-xl font-black text-primary tracking-tight">FastStore</span>
                     </div>
 
-                    {/* Notifications & Déconnexion */}
-                    <div className="flex items-center gap-4">
+                    {/* ACTIONS : CLOCHE, PROFIL CLIQUABLE & DECONNEXION */}
+                    <div className="flex items-center gap-3">
                         <button className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-secondary border-2 border-white" />
@@ -127,6 +140,17 @@ export default function MerchantLayout({
                         >
                             <LogOut className="w-4 h-4" />
                         </button>
+                        {/* NOUVEAU : BOUTON AVATAR DE PROFIL CLIQUABLE (REDIRIGE VERS LA PAGE PROFIL) */}
+                        <Link
+                            href="/settings/profile"
+                            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 overflow-hidden flex items-center justify-center border border-slate-200 transition"
+                            title="Mon Profil"
+                        >
+                            <span className="font-extrabold text-xs text-slate-600">
+                                {merchant?.full_name?.charAt(0).toUpperCase()}
+                            </span>
+                        </Link>
+
                     </div>
                 </header>
 
@@ -151,10 +175,10 @@ export default function MerchantLayout({
                                 </div>
                             </div>
                             <div className="overflow-hidden">
-                                <h3 className="text-xs font-black text-slate-800 truncate">{merchant.full_name || "Commerçant"}</h3>
+                                <h3 className="text-xs font-black text-slate-800 truncate">{merchant.full_name}</h3>
                                 <span className="inline-block px-2 py-0.5 bg-amber-50 text-third text-[8px] font-black uppercase rounded-md mt-1 border border-amber-100">
-                              Premium Plan
-                            </span>
+                                  {planName}
+                                </span>
                             </div>
                         </div>
 
@@ -240,8 +264,16 @@ export default function MerchantLayout({
                             >
                                 <Landmark  className="w-4 h-4 text-slate-400" /> Finances
                             </Link>
-
-
+                            <Link
+                                href="/settings/billing"
+                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
+                                    pathname.startsWith("/settings/billing")
+                                        ? "bg-third text-white shadow-sm"
+                                        : "hover:bg-slate-50 hover:text-slate-800"
+                                }`}
+                            >
+                                <DollarSign className="w-4 h-4 text-slate-400" /> Abonnement
+                            </Link>
                             <Link
                                 href="/settings"
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
@@ -250,8 +282,9 @@ export default function MerchantLayout({
                                         : "hover:bg-slate-50 hover:text-slate-800"
                                 }`}
                             >
-                                <Settings className="w-4 h-4 text-slate-400" /> Store Settings
+                                <Settings className="w-4 h-4 text-slate-400" /> Paramètre boutique
                             </Link>
+
                         </nav>
 
                     </div>
