@@ -17,6 +17,7 @@ interface ShopProfile {
     id: string;
     name: string;
     slug: string;
+    logo: string;
     currency: string;
     theme_style: string;
     theme_settings: any;

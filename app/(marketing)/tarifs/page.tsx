@@ -137,7 +137,7 @@ export default function PricingPage() {
                             {/* 1. PLAN DÉBUTANT */}
                             <div className="p-8 border border-slate-200 rounded-3xl bg-white shadow-sm flex flex-col justify-between">
                                 <div>
-                                    <h3 className="text-xl font-black text-slate-900">Débutant</h3>
+                                    <h3 className="text-xl font-black text-slate-900">STARTER</h3>
                                     <p className="text-xs text-slate-400 font-medium mt-2 leading-relaxed h-10">
                                         Parfait pour tester votre idée et lancer vos premières ventes.
                                     </p>
@@ -169,7 +169,7 @@ export default function PricingPage() {
                                         </li>
                                         <li className="flex items-start gap-2.5">
                                             <X className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
-                                            <span className="line-through">Intégration WhatsApp</span>
+                                            <span className="line-through">Notification WhatsApp</span>
                                         </li>
                                         <li className="flex items-start gap-2.5">
                                             <X className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
@@ -237,7 +237,7 @@ export default function PricingPage() {
                                         </li>
                                         <li className="flex items-start gap-2.5">
                                             <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
-                                            <span>Intégration WhatsApp</span>
+                                            <span>Notification WhatsApp</span>
                                         </li>
                                         <li className="flex items-start gap-2.5">
                                             <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />

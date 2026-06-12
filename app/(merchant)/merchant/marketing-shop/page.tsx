@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useMerchantAuthStore } from "@/store/merchantAuthStore";
 import { QRCodeCanvas } from "qrcode.react"; // Générateur de QR Code officiel
 import { Download, Share2, Clipboard, Check, Lightbulb } from "lucide-react";
+import {FaWhatsapp} from "react-icons/fa";
 
 export default function MerchantMarketingPage() {
     const { shop, merchant } = useMerchantAuthStore();
@@ -66,6 +67,7 @@ export default function MerchantMarketingPage() {
         window.open(`https://wa.me/?text=${message}`, "_blank");
     };
 
+
     return (
         <div className="p-6 md:p-8 space-y-8 max-w-5xl w-full mx-auto">
 
@@ -88,15 +90,21 @@ export default function MerchantMarketingPage() {
                     {/* CONTENEUR DU QR CODE DE LA MAQUETTE */}
                     <div className="p-6 bg-slate-50 border border-slate-150 rounded-2xl flex items-center justify-center my-6 relative w-48 h-48 md:w-56 md:h-56 shadow-inner">
                         {/*
-              Le Canvas génère le QR Code réel pointant vers l'URL de sa boutique.
-              Nous incluons une taille adaptée pour l'export en téléchargement.
-            */}
+                          Le Canvas génère le QR Code réel pointant vers l'URL de sa boutique.
+                          Nous incluons une taille adaptée pour l'export en téléchargement.
+                        */}
                         <QRCodeCanvas
                             id="qr-code-canvas"
                             value={shopUrl}
                             size={200}
                             level={"H"} // Haute tolérance aux erreurs (permet d'imprimer proprement)
                             includeMargin={true}
+                            imageSettings={{
+                                src: shop.theme_settings.logo_url,
+                                height: 40,
+                                width: 40,
+                                excavate: true, // crée un espace blanc derrière le logo
+                            }}
                             className="rounded-lg bg-white p-2 shadow-sm border border-slate-100"
                         />
                     </div>
@@ -131,7 +139,7 @@ export default function MerchantMarketingPage() {
                                 type="button"
                                 className="flex-1 py-3 rounded-xl bg-[#22C55E]/10 hover:bg-[#22C55E]/20 text-[#22C55E] font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                📱 WhatsApp
+                                <FaWhatsapp /> WhatsApp
                             </button>
 
                             <button
@@ -158,13 +166,13 @@ export default function MerchantMarketingPage() {
                     <div className="p-6 md:p-8 bg-[#FEF3C7]/20 border border-amber-200/60 rounded-3xl shadow-sm space-y-4">
                         <div className="flex items-center gap-3">
                             <Lightbulb className="w-5 h-5 text-[#F59E0B]" />
-                            <h3 className="text-base font-black text-slate-800">Conseils d'utilisation</h3>
+                            <h3 className="text-base font-black text-slate-800">Conseils d&#39;utilisation</h3>
                         </div>
 
                         <ul className="space-y-3.5 text-xs text-slate-500 font-semibold">
                             <li className="flex items-start gap-2.5">
                                 <span className="text-[#F59E0B] font-bold text-sm shrink-0 mt-0.5">✓</span>
-                                <span>Imprimez et placez-le près de votre caisse physique pour inviter les clients physiques à s'abonner à votre catalogue mobile.</span>
+                                <span>Imprimez et placez-le près de votre caisse physique pour inviter les clients physiques à voir votre catalogue mobile.</span>
                             </li>
                             <li className="flex items-start gap-2.5">
                                 <span className="text-[#F59E0B] font-bold text-sm shrink-0 mt-0.5">✓</span>

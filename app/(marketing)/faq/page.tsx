@@ -19,24 +19,6 @@ const DEFAULT_FAQS: FAQItem[] = [
         category: "Général",
         question: "Comment créer ma boutique ?",
         answer: "Pour créer votre boutique, cliquez simplement sur le bouton 'Créer ma boutique gratuitement'. Renseignez votre adresse email, choisissez le nom de votre boutique, configurez votre mot de passe et vous serez prêt à importer vos premiers produits en moins de 5 minutes."
-    },
-    {
-        id: "default-2",
-        category: "Tarifs",
-        question: "Quels sont les frais de transaction ?",
-        answer: "Les paiements en main propre (Cash on Delivery) ne comportent aucun frais plateforme. Pour les encaissements mobiles en ligne (Orange Money, MTN, Wave, Moov), nos frais s'élèvent à un taux minime de 2.5% sur le plan Croissance, vous permettant de recevoir votre argent instantanément de façon sécurisée."
-    },
-    {
-        id: "default-3",
-        category: "Domaine",
-        question: "Puis-je utiliser mon propre domaine ?",
-        answer: "Oui, tout à fait. À partir de notre plan Croissance, vous pouvez connecter votre propre nom de domaine personnalisé (ex: maboutique.com). Nous nous chargeons de l'enregistrement de votre domaine, de sa configuration DNS et de l'installation de votre certificat de sécurité SSL gratuitement pour la première année."
-    },
-    {
-        id: "default-4",
-        category: "WhatsApp",
-        question: "Comment fonctionne l'intégration WhatsApp ?",
-        answer: "Dès que l'acheteur valide son panier d'achat sur votre catalogue, LinkBoutik génère un lien sécurisé et redirige automatiquement le client vers votre numéro de discussion WhatsApp professionnelle avec un message pré-rempli contenant le récapitulatif propre des articles, du total et de ses coordonnées."
     }
 ];
 
@@ -129,7 +111,7 @@ export default function FAQPage() {
                                     >
                                         <button
                                             onClick={() => toggleFaq(faq.id)}
-                                            className="w-full p-5 text-left font-bold text-xs md:text-sm text-slate-800 flex justify-between items-center hover:bg-slate-50 transition duration-150"
+                                            className="w-full p-5 text-left cursor-pointer font-bold text-xs md:text-sm text-slate-800 flex justify-between items-center hover:bg-slate-50 transition duration-150"
                                         >
                                             <span>{faq.question}</span>
                                             <ChevronDown

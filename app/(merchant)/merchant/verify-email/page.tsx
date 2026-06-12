@@ -12,7 +12,7 @@ export default function VerifyEmailPage() {
     const searchParams = useSearchParams();
     const email = searchParams.get("email") || "";
 
-    const { merchant, updateMerchant, isAuthenticated } = useMerchantAuthStore();
+    const { merchant, setCredentials, updateMerchant, isAuthenticated } = useMerchantAuthStore();
     const targetEmail = email || merchant?.email || "";
 
     // État pour les 4 chiffres de l'OTP
@@ -88,6 +88,8 @@ export default function VerifyEmailPage() {
                 }),
             });
 
+            setCredentials(updatedUser.user, updatedUser.access_token);
+
             // Mettre à jour l'état local du marchand connecté pour lever la restriction
             if (isAuthenticated) {
                 updateMerchant({ is_verified: true });
@@ -95,10 +97,20 @@ export default function VerifyEmailPage() {
 
             setSuccessMsg("Votre compte a été vérifié avec succès !");
             setTimeout(() => {
-                router.push("/"); // Redirection vers le tableau de bord marchand
+                router.push("/onboarding"); // Redirection vers le tableau de bord marchand
             }, 1500);
         } catch (err: any) {
-            setError(err.message || "Le code saisi est incorrect ou a expiré.");
+            if (err.message && err.message.includes("déjà vérifié")) {
+                if (isAuthenticated) {
+                    updateMerchant({ is_verified: true });
+                }
+                setSuccessMsg("Compte déjà actif. Redirection vers l'onboarding...");
+                setTimeout(() => {
+                    router.push("/onboarding");
+                }, 1500);
+            } else {
+                setError(err.message || "Le code saisi est incorrect ou a expiré.");
+            }
         } finally {
             setLoading(false);
         }

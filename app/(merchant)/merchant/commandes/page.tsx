@@ -55,7 +55,7 @@ export default function MerchantOrdersPage() {
     const [activeTab, setActiveTab] = useState("Toutes");
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
-    const [isPremium, setIsPremium] = useState(true); // Gère la modale d'upgrade du CSV
+    const [isPremium, setIsPremium] = useState(false); // Gère la modale d'upgrade du CSV
 
     // États pour les calculs de période dynamiques
     const [stats, setStats] = useState<DashboardPeriodStats | null>(null);
@@ -78,17 +78,21 @@ export default function MerchantOrdersPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [ordersData, statsData, prodsData, custsData] = await Promise.all([
+            const [ordersData, statsData, prodsData, custsData, subData] = await Promise.all([
                 apiFetch<Order[]>(`/merchant/orders?status=${activeTab}&q=${search}`),
                 apiFetch<DashboardPeriodStats>("/merchant/orders/stats"),
                 apiFetch<Product[]>("/merchant/products"),
-                apiFetch<Customer[]>("/merchant/customers").catch(() => [])
+                apiFetch<Customer[]>("/merchant/customers").catch(() => []),
+                apiFetch<any>("/merchant/subscription")
             ]);
 
             setOrders(ordersData);
             setStats(statsData);
             setProducts(prodsData);
             setCustomers(custsData);
+            setIsPremium(
+                subData.plan_name?.toUpperCase() !== "STARTER"
+            );
         } catch (err: any) {
             console.error(err);
         } finally {
@@ -108,11 +112,6 @@ export default function MerchantOrdersPage() {
                     "Authorization": `Bearer ${localStorage.getItem("linkboutik_merchant_token")}`
                 }
             });
-
-            if (response.status === 402) {
-                setIsPremium(false); // Ouvre la modale paywall
-                return;
-            }
 
             if (!response.ok) throw new Error();
 
@@ -201,12 +200,14 @@ export default function MerchantOrdersPage() {
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">Historique des commandes</h1>
                     <p className="text-xs font-semibold text-slate-400 mt-1">Vue simplifiée de toutes les commandes de la boutique.</p>
                 </div>
-                <button
-                    onClick={() => setIsAddOpen(true)}
-                    className="px-5 py-3 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition flex items-center justify-center gap-2 shadow-md shadow-teal-900/10 cursor-pointer"
-                >
-                    <Plus className="w-4 h-4" /> Nouvelle Commande
-                </button>
+                { isPremium && (
+                    <button
+                        onClick={() => setIsAddOpen(true)}
+                        className="px-5 py-3 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition flex items-center justify-center gap-2 shadow-md shadow-teal-900/10 cursor-pointer"
+                    >
+                        <Plus className="w-4 h-4" /> Nouvelle Commande
+                    </button>
+                )}
             </div>
 
             {/* BANDEAU FINANCIER D'ÉLITE */}
@@ -369,13 +370,21 @@ export default function MerchantOrdersPage() {
                                 Téléchargez un rapport CSV détaillé pour votre comptabilité analytique.
                             </p>
                         </div>
-                        <button
+                        { isPremium ? (<button
                             onClick={handleExportCSV}
                             type="button"
                             className="w-full py-3.5 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition cursor-pointer shadow-sm"
                         >
                             Générer CSV
-                        </button>
+                        </button>) : (
+                            <button
+                                type="button"
+                                onClick={() => router.push("/billing")}
+                                className="w-full cursor-pointer py-3 rounded-xl bg-[#F59E0B] text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                            >
+                                <ShieldAlert className="w-4 h-4" /> S&#39;abonner
+                            </button>
+                        )}
                     </div>
 
                 </div>
@@ -540,34 +549,6 @@ export default function MerchantOrdersPage() {
                 </div>
             )}
 
-            {/* ========================================================= */}
-            {/* MODALE : SÉCURITÉ BILLING PAYWALL SUR L'EXPORT CSV */}
-            {/* ========================================================= */}
-            {!isPremium && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center space-y-5 shadow-2xl">
-                        <div className="w-12 h-12 rounded-full bg-amber-50 text-[#F59E0B] flex items-center justify-center mx-auto border border-amber-100">
-                            <Lock className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-black text-slate-900">Fonctionnalité Premium</h3>
-                            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                                L&#39;exportation complète de votre historique de ventes au format CSV pour votre comptabilité est réservée aux abonnés des forfaits **Business** et **Pro**.
-                            </p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button type="button" onClick={() => setIsPremium(true)} className="w-1/2 py-3 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs">Fermer</button>
-                            <button
-                                type="button"
-                                onClick={() => router.push("/settings/billing")}
-                                className="w-1/2 py-3 rounded-xl bg-[#F59E0B] text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
-                            >
-                                <ShieldAlert className="w-4 h-4" /> S&#39;abonner
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
         </div>
     );

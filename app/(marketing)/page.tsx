@@ -10,14 +10,22 @@ import {
     Users,
     Wallet,
     Rocket,
-    X, MoveRight, Check, Star
+    X, MoveRight, Check, Star, ArrowLeft, ArrowRight
 } from "lucide-react";
 import {Plan} from "@/interfaces/Plan";
+import {FaFacebookF, FaInstagram, FaTiktok, FaWhatsapp} from "react-icons/fa";
 
 
 export default function MarketingLandingPage() {
     const [plans, setPlans] = useState<Plan[]>([]);
     const [loadingPlans, setLoadingPlans] = useState(true);
+
+    const socials = [
+        { icon: FaFacebookF, name: "Facebook" },
+        { icon: FaInstagram, name: "Instagram" },
+        { icon: FaTiktok, name: "TikTok" },
+        { icon: FaWhatsapp, name: "WhatsApp" },
+    ];
 
     // États pour l'accordéon FAQ
     const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -56,21 +64,21 @@ export default function MarketingLandingPage() {
                     LinkBoutik aide les commerçants qui vendent sur Facebook, Instagram, TikTok et WhatsApp à centraliser leurs ventes, leurs commandes et leurs clients sur une seule plateforme.
                 </p>
                 <p className="mt-4 text-xs md:text-sm text-slate-500 max-w-xl">
-                    Créez votre boutique en ligne en quelques minutes et laissez vos clients consulter vos produits, passer commande et vous contacter directement sur WhatsApp.
+                    Créez votre boutique en ligne en quelques minutes et permettez à vos clients de consulter vos produits et passer commande facilement, pendant que vous gérez votre activité sans stress.
                 </p>
 
                 <a
                     href={merchantUrl}
                     className="mt-8 px-8 py-4 rounded-xl bg-third text-white font-extrabold text-sm md:text-base hover:opacity-95 transition duration-200 flex items-center gap-2 shadow-md shadow-primary/10"
                 >
-                    Créer ma boutique gratuitement <span className="text-lg">→</span>
+                    Créer ma boutique gratuitement <ArrowRight />
                 </a>
 
                 {/* Note étoiles */}
                 <div className="mt-6 flex items-center gap-2">
                     <div className="flex gap-0.5 text-secondary">
                         {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} size={17} className="text-yellow-500 fill-yellow-500" />
+                            <Star key={i} size={16} className="text-yellow-500 fill-yellow-500" />
                         ))}
                     </div>
                     <span className="text-xs font-bold text-slate-500">+200 commerçants déjà inscrits</span>
@@ -109,11 +117,14 @@ export default function MarketingLandingPage() {
                 </h2>
 
                 <div className="mt-8 p-6 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-around gap-2 text-[10px] md:text-xs font-bold text-primary">
-                    <div className="grid grid-cols-2 gap-1 shrink-0">
-                        {["FB", "IG", "TK", "WA"].map((social) => (
-                            <span key={social} className="w-8 h-8 rounded bg-white border border-slate-200/60 flex items-center justify-center text-[10px] font-black text-slate-500">{social}</span>
-                        ))}
-                    </div>
+                    {socials.map(({ icon: Icon, name }) => (
+                        <span
+                            key={name}
+                            className="w-8 h-8 rounded bg-white border border-slate-200/60 flex items-center justify-center text-slate-500"
+                                            >
+                          <Icon size={14} />
+                        </span>
+                    ))}
                     <MoveRight className="text-slate-400"/>
                     <span className="px-4 py-2.5 rounded-lg bg-third text-white font-extrabold">LinkBoutik</span>
                     <MoveRight className="text-slate-400"/>
@@ -155,9 +166,9 @@ export default function MarketingLandingPage() {
                             { num: "4", title: "Livrez et encaissez", desc: "Utilisez votre système de livraison et encaissez sereinement." }
                         ].map((step) => (
                             <div key={step.num} className="flex items-start gap-4">
-                <span className="w-8 h-8 rounded-full bg-third text-white font-bold flex items-center justify-center text-sm shrink-0">
-                  {step.num}
-                </span>
+                                <span className="w-8 h-8 rounded-full bg-third text-white font-bold flex items-center justify-center text-sm shrink-0">
+                                  {step.num}
+                                </span>
                                 <div>
                                     <h4 className="font-black text-third text-sm md:text-base">{step.title}</h4>
                                     <p className="text-xs md:text-sm text-slate-500 mt-1">{step.desc}</p>
@@ -179,7 +190,7 @@ export default function MarketingLandingPage() {
                         { icon: ClipboardCheck, title: "Gérez vos commandes facilement", desc: "Suivez le statut de préparation et de livraison sans feuille de papier." },
                         { icon: Users, title: "Conservez vos clients", desc: "Accédez à l'historique d'achat de vos clients fidèles." },
                         { icon: Wallet, title: "Compatible Mobile Money", desc: "Encaissez par Orange Money, MTN, Wave ou Moov." },
-                        { icon: Rocket, title: "En moins de 10 minutes", desc: "Aucun savoir technique requis pour configurer votre boutique." }
+                        { icon: Rocket, title: "En moins de 5 minutes", desc: "Aucun savoir technique requis pour configurer votre boutique." }
                     ].map((item, idx) => {
                         const IconComponent = item.icon; // Instancie l'icône dynamiquement
                         return (
@@ -228,7 +239,7 @@ export default function MarketingLandingPage() {
                             </div>
                             <div>
                                 <div className="flex justify-between text-[10px] text-white/80 font-bold mb-1">
-                                    <span>Nouveaux Abonnés (P2)</span>
+                                    <span>Nouveaux Clients (P2)</span>
                                     <span>45%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
@@ -254,7 +265,6 @@ export default function MarketingLandingPage() {
                 ))}
             </section>
 
-            {/* 9. SECTION LES PLANS (TARIFS) */}
             {/* 9. SECTION LES PLANS (TARIFS) */}
             <section id="tarifs" className="py-16 bg-white border-t border-slate-100">
                 <div className="max-w-xl mx-auto px-6 text-center">
@@ -295,12 +305,12 @@ export default function MarketingLandingPage() {
                                     >
                                         {isBusiness && (
                                             <span className="absolute -top-3 right-6 px-3 py-1 bg-primary text-white text-[9px] font-black uppercase rounded-full">
-                  Recommandé
-                </span>
+                                          Recommandé
+                                        </span>
                                         )}
                                         <span className={`text-xs font-bold uppercase tracking-widest ${isBusiness ? "text-primary" : "text-slate-400"}`}>
-                {plan.name}
-              </span>
+                                        {plan.name}
+                                      </span>
                                         <h3 className="text-2xl font-black text-slate-800 mt-2">
                                             {plan.price === 0 ? (
                                                 "Gratuit"
@@ -308,8 +318,8 @@ export default function MarketingLandingPage() {
                                                 <>
                                                     {plan.price.toLocaleString()} {plan.currency === "XOF" || plan.currency === "XAF" ? "FCFA" : plan.currency}
                                                     <span className="text-xs font-semibold text-slate-400">
-                      {plan.billing_cycle === "monthly" ? " /mois" : ` /${plan.billing_cycle}`}
-                    </span>
+                                              {plan.billing_cycle === "monthly" ? " /mois" : ` /${plan.billing_cycle}`}
+                                            </span>
                                                 </>
                                             )}
                                         </h3>
@@ -354,17 +364,53 @@ export default function MarketingLandingPage() {
                             <div className="space-y-6 text-left">
                                 {/* Plan 1 : Recommandé (Business) */}
                                 <div className="p-8 border-2 border-primary rounded-3xl bg-neutra shadow-lg relative text-left">
-            <span className="absolute -top-3 right-6 px-3 py-1 bg-primary text-white text-[9px] font-black uppercase rounded-full">
-              Recommandé
-            </span>
+                                    <span className="absolute -top-3 right-6 px-3 py-1 bg-primary text-white text-[9px] font-black uppercase rounded-full">
+                                      Recommandé
+                                    </span>
                                     <span className="text-xs font-bold text-primary uppercase tracking-widest">Business</span>
                                     <h3 className="text-2xl font-black text-slate-800 mt-2">15 000 FCFA <span className="text-xs font-semibold text-slate-400">/mois</span></h3>
 
                                     <ul className="mt-6 space-y-3.5 text-xs text-slate-600 font-semibold">
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Boutique illimitée</li>
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Gestion stock avancée</li>
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Paiement Mobile Money</li>
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Statistiques complètes</li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Produits illimités</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Paiements Mobile Money & Cryptomonnaie</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Frais de transaction retrait réduits (3.5%)</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Statistiques avancé</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Sous-domaine offert</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Notification WhatsApp</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Personalisation de référencement Seo</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Création de commande personnalisée</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Création de fiche client</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Création de code promo</span>
+                                        </li>
                                     </ul>
                                     <a href={merchantUrl} className="mt-8 block w-full py-3.5 text-center rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition">
                                         Créer ma boutique
@@ -377,9 +423,26 @@ export default function MarketingLandingPage() {
                                     <h3 className="text-2xl font-black text-slate-800 mt-2">Gratuit</h3>
 
                                     <ul className="mt-6 space-y-3.5 text-xs text-slate-600 font-medium">
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Jusqu&#39;à 10 produits</li>
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Bouton WhatsApp</li>
-                                        <li className="flex items-center gap-2"><span className="text-tertiary">✓</span> Gestion basique</li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Jusqu&#39;à 30 produits</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Paiements Mobile Money de base</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Frais de transaction retrait 5%</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Statistiques de base</span>
+                                        </li>
+                                        <li className="flex items-start gap-2.5">
+                                            <Check className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+                                            <span>Sous-domaine offert</span>
+                                        </li>
                                     </ul>
                                     <a href={merchantUrl} className="mt-8 block w-full py-3.5 text-center rounded-xl bg-white border border-slate-200 text-slate-600 font-extrabold text-xs hover:bg-slate-50 transition">
                                         Commencer
@@ -399,13 +462,12 @@ export default function MarketingLandingPage() {
                 <div className="mt-10 space-y-3">
                     {[
                         { q: "Dois-je savoir coder ?", a: "Non, absolument pas. LinkBoutik est conçu pour être aussi simple d'utilisation qu'une application de messagerie. Vous importez vos photos et prix en quelques clics." },
-                        { q: "Puis-je utiliser WhatsApp ?", a: "Oui, la plateforme intègre un bouton d'achat direct redirigeant vos clients sur votre WhatsApp avec la commande pré-remplie." },
-                        { q: "Paiements Mobile Money ?", a: "Oui, nous supportons tous les grands opérateurs d'Afrique de l'Ouest et Centrale (Wave, MTN, Orange, Moov) pour recevoir vos acomptes en ligne." }
+                        { q: "Paiements Mobile Money ?", a: "Oui, nous supportons tous les grands opérateurs d'Afrique de l'Ouest et Centrale (Wave, MTN, Orange, Moov) pour vos opérations." }
                     ].map((item, idx) => (
                         <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
                             <button
                                 onClick={() => toggleFaq(idx)}
-                                className="w-full p-4 text-left font-bold text-lg  text-slate-800 flex justify-between items-center hover:bg-slate-50 transition"
+                                className="w-full p-4 text-left cursor-pointer font-bold text-lg  text-slate-800 flex justify-between items-center hover:bg-slate-50 transition"
                             >
                                 <span>{item.q}</span>
                                 <span className="text-primary text-lg font-bold">{openFaq === idx ? "−" : "+"}</span>

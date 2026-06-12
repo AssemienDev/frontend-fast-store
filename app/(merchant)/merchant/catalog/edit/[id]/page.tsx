@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { ArrowLeft, Upload, Trash2, Tag, Box, DollarSign, Layers, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Tag, Box, DollarSign, Layers, Image as ImageIcon, Check, Clock } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -91,7 +91,7 @@ export default function EditProductPage() {
             });
     }, [id]);
 
-    // 2. GÉNÉRATEUR DE VARIANTES CROISÉES DYNAMIQUES
+    // 2. GÉNÉRATEUR DE VARIANTES CROISÉES DYNAMIQUES AVEC PRÉSERVATION D'ÉTAT
     useEffect(() => {
         if (!form.has_variants) return;
 
@@ -103,15 +103,19 @@ export default function EditProductPage() {
         }
 
         const combinations: any[] = [];
+        const basePrice = form.price || 0;
+        const baseComparePrice = form.compare_at_price ? parseFloat(form.compare_at_price) : null;
 
         if (tailles.length > 0 && couleurs.length > 0) {
             tailles.forEach(t => {
                 couleurs.forEach(c => {
-                    // Chercher si cette combinaison existait déjà pour préserver son stock et son SKU
+                    // SÉCURISÉ : On cherche si cette ligne existait déjà avant pour préserver sa saisie manuelle !
                     const existing = variantRows.find(r => r.taille === t && r.couleur === c);
                     combinations.push({
                         taille: t,
                         couleur: c,
+                        price: existing ? existing.price : basePrice,
+                        compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
                         stock: existing ? existing.stock : 0,
                         sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${t}-${c}`.toUpperCase()
                     });
@@ -123,6 +127,8 @@ export default function EditProductPage() {
                 combinations.push({
                     taille: t,
                     couleur: null,
+                    price: existing ? existing.price : basePrice,
+                    compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
                     stock: existing ? existing.stock : 0,
                     sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${t}`.toUpperCase()
                 });
@@ -133,6 +139,8 @@ export default function EditProductPage() {
                 combinations.push({
                     taille: null,
                     couleur: c,
+                    price: existing ? existing.price : basePrice,
+                    compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
                     stock: existing ? existing.stock : 0,
                     sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${c}`.toUpperCase()
                 });
@@ -183,6 +191,19 @@ export default function EditProductPage() {
         setForm({ ...form, images: form.images.filter((_, i) => i !== index) });
     };
 
+    // Actions d'éditions d'attributs de la matrice
+    const handleVariantPriceChange = (index: number, priceVal: number) => {
+        const updated = [...variantRows];
+        updated[index].price = priceVal;
+        setVariantRows(updated);
+    };
+
+    const handleVariantComparePriceChange = (index: number, comparePriceVal: number | null) => {
+        const updated = [...variantRows];
+        updated[index].compare_at_price = comparePriceVal;
+        setVariantRows(updated);
+    };
+
     const handleVariantStockChange = (index: number, stockVal: number) => {
         const updated = [...variantRows];
         updated[index].stock = stockVal;
@@ -221,7 +242,7 @@ export default function EditProductPage() {
                 }),
             });
 
-            router.push("/merchant/catalog");
+            router.push("/catalog");
         } catch (err: any) {
             setError(err.message || "Une erreur est survenue lors de l'enregistrement du produit.");
         } finally {
@@ -326,33 +347,8 @@ export default function EditProductPage() {
                         </div>
                     </div>
 
-                    {/* TARIFICATION */}
-                    <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
-                        <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-3">Tarification</h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de vente * (FCFA)</label>
-                                <input
-                                    type="number" required value={form.price || ""}
-                                    onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-                                    placeholder="FCFA 0"
-                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix barré (Optionnel)</label>
-                                <input
-                                    type="number" value={form.compare_at_price}
-                                    onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
-                                    placeholder="FCFA 0"
-                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* VARIANTES DYNAMIQUES DE STOCK */}
+                    {/* OPTIONS DE VARIANTES COMPLÈTES AVEC TARIFICATION DYNAMIQUE SUR LES COMBINAISONS */}
                     <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
                         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Variantes (Optionnel)</h3>
@@ -390,31 +386,55 @@ export default function EditProductPage() {
                                     </div>
                                 </div>
 
-                                {/* Grille dynamique */}
+                                {/* Grille dynamique (Héritage et surcharges comptables) */}
                                 {variantRows.length > 0 && (
                                     <div className="space-y-3 pt-2">
-                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Matrice de Stock par combinaison</span>
-                                        <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/20">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Matrice de Stock & Tarification par variante</span>
+                                        <div className="border border-slate-200/60 rounded-2xl overflow-hidden bg-slate-50/20 divide-y divide-slate-100">
                                             {variantRows.map((vRow, idx) => (
-                                                <div key={idx} className="p-3.5 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-700">
-                                                    <div>
-                                                        {vRow.taille && <span className="px-2 py-1 bg-teal-50 text-primary rounded mr-2">Taille : {vRow.taille}</span>}
-                                                        {vRow.couleur && <span className="px-2 py-1 bg-amber-50 text-secondary rounded">Couleur : {vRow.couleur}</span>}
+                                                <div key={idx} className="p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs font-bold text-slate-700">
+                                                    <div className="min-w-[150px]">
+                                                        {vRow.taille && <span className="px-2.5 py-1 bg-teal-50 text-primary rounded-lg border border-teal-100/50 mr-1.5">Taille : {vRow.taille}</span>}
+                                                        {vRow.couleur && <span className="px-2.5 py-1 bg-amber-50 text-secondary rounded-lg border border-amber-100/50">Couleur : {vRow.couleur}</span>}
                                                     </div>
 
-                                                    <div className="flex items-center gap-3 w-full md:w-auto">
-                                                        <input
-                                                            type="text" value={vRow.sku}
-                                                            onChange={(e) => handleVariantSkuChange(idx, e.target.value)}
-                                                            placeholder="SKU"
-                                                            className="w-1/2 md:w-28 p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                                                        />
-                                                        <input
-                                                            type="number" required value={vRow.stock || ""}
-                                                            onChange={(e) => handleVariantStockChange(idx, parseInt(e.target.value) || 0)}
-                                                            placeholder="Stock"
-                                                            className="w-1/2 md:w-20 p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                                                        />
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Prix (CFA)</label>
+                                                            <input
+                                                                type="number" required value={vRow.price || ""}
+                                                                onChange={(e) => handleVariantPriceChange(idx, parseFloat(e.target.value) || 0)}
+                                                                placeholder="Prix"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Prix Barré (CFA)</label>
+                                                            <input
+                                                                type="number" value={vRow.compare_at_price || ""}
+                                                                onChange={(e) => handleVariantComparePriceChange(idx, e.target.value ? parseFloat(e.target.value) : null)}
+                                                                placeholder="Promo"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Stock</label>
+                                                            <input
+                                                                type="number" required value={vRow.stock || "0"}
+                                                                onChange={(e) => handleVariantStockChange(idx, parseInt(e.target.value) || 0)}
+                                                                placeholder="Stock"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">SKU</label>
+                                                            <input
+                                                                type="text" value={vRow.sku}
+                                                                onChange={(e) => handleVariantSkuChange(idx, e.target.value)}
+                                                                placeholder="SKU"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs uppercase"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -447,18 +467,57 @@ export default function EditProductPage() {
                         )}
                     </div>
 
+                    {/* TARIFICATION */}
+                    {!form.has_variants && (<div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
+                        <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-3">Tarification</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de vente * (FCFA)</label>
+                                <input
+                                    type="number" required value={form.price || ""}
+                                    onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
+                                    placeholder="FCFA 0"
+                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix barré (Optionnel)</label>
+                                <input
+                                    type="number" value={form.compare_at_price}
+                                    onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
+                                    placeholder="FCFA 0"
+                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>)}
+
                     {/* DESCRIPTION EDITABLE */}
                     <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
                         <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-3">Détails</h3>
-                        <div>
-                            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Description détaillée</label>
-                            <ReactQuill
-                                theme="snow"
-                                value={form.description}
-                                onChange={(content) => setForm({ ...form, description: content })}
-                                placeholder="Décrivez les caractéristiques, avantages et spécifications de votre produit..."
-                                className="bg-white rounded-2xl"
-                            />
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                Description détaillée
+                            </label>
+
+                            <div className="quill-editor-wrapper">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={form.description}
+                                    // Met à jour l'HTML de la description dans l'état réactif
+                                    onChange={(content) => setForm({ ...form, description: content })}
+                                    placeholder="Décrivez les caractéristiques, avantages et spécifications de votre produit..."
+                                    modules={{
+                                        toolbar: [
+                                            [{ header: [1, 2, false] }],
+                                            ["bold", "italic", "underline", "strike"],
+                                            [{ list: "ordered" }, { list: "bullet" }],
+                                            ["clean"],
+                                        ],
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
 

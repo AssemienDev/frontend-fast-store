@@ -53,7 +53,7 @@ export default function MerchantCustomerSegmentsPage() {
                     Analysez automatiquement le comportement de vos acheteurs, ciblez vos campagnes promotionnelles de fidélité et identifiez instantanément vos inactifs pour les relancer ! Cette fonctionnalité requiert un forfait **Business** ou **Pro**.
                 </p>
                 <button
-                    onClick={() => router.push("/settings/billing")}
+                    onClick={() => router.push("/billing")}
                     className="px-6 py-3 rounded-xl bg-primary text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition inline-flex items-center gap-2 cursor-pointer shadow-md"
                 >
                     <ShieldAlert className="w-4 h-4" /> Activer l&#39;offre Premium

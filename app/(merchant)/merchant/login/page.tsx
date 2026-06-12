@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMerchantAuthStore } from "@/store/merchantAuthStore";
 import { apiFetch } from "@/lib/api";
-import { Mail, Lock, Eye, EyeOff, Store } from "lucide-react";
+import {Mail, Lock, Eye, EyeOff, Store, ArrowRight} from "lucide-react";
 
 export default function MerchantLoginPage() {
     const router = useRouter();
-    const { merchant, setCredentials, isAuthenticated } = useMerchantAuthStore();
+    const { merchant, setShop, setCredentials, isAuthenticated } = useMerchantAuthStore();
 
     const [form, setForm] = useState({ email: "", password: "", imp: "" });
     const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +36,7 @@ export default function MerchantLoginPage() {
                 body: JSON.stringify({
                     email: form.email,
                     password: form.password,
-                    imp: form.imp, // <--- ENVOI DU CHAMP PIÉGÉ AU SERVEUR
+                    imp: form.imp
                 }),
             });
 
@@ -177,14 +177,16 @@ export default function MerchantLoginPage() {
                         {loading ? (
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                            "Se connecter →"
+                            <span className="flex items-center gap-2">
+                                Se connecter <ArrowRight className="w-4 h-4" />
+                            </span>
                         )}
                     </button>
 
                     {/* LIEN DE CRÉATION DE COMPTE */}
                     <div className="text-center pt-4 text-sm font-semibold text-slate-500">
                         Pas encore de compte ?{" "}
-                        <Link href="/merchant/register" className="text-primary hover:underline font-bold">
+                        <Link href="/register" className="text-primary hover:underline font-bold">
                             S&#39;inscrire
                         </Link>
                     </div>

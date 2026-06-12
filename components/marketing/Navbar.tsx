@@ -17,6 +17,8 @@ export default function Navbar() {
     // Détermine dynamiquement l'URL de l'espace marchand selon l'environnement
     const merchantUrl =
         process.env.NEXT_PUBLIC_MERCHANT_URL || "http://marchand.localhost:3000";
+    const merchantUrlLogin =
+        process.env.NEXT_PUBLIC_MERCHANT_URL+"/login" || "http://marchand.localhost:3000/login";
 
     return (
         <nav className="bg-white border-b border-slate-100 sticky top-0 z-50">
@@ -52,7 +54,7 @@ export default function Navbar() {
                 {/* LIENS DE NAVIGATION (DESKTOP) */}
                 <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-600">
                     <Link href="/" className={`transition ${isActive("/") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>Accueil</Link>
-                    <Link href="/tarifs" className={`transition ${isActive("/tarifs") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>Pricing</Link>
+                    <Link href="/tarifs" className={`transition ${isActive("/tarifs") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>Tarifs</Link>
                     <Link href="/faq" className={`transition ${isActive("/faq") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>FAQ</Link>
                     <Link href="/blog" className={`transition ${isActive("/blog") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>Blog</Link>
                     <Link href="/about" className={`transition ${isActive("/about") ? "text-primary font-bold" : "text-slate-600 hover:text-primary"}`}>A propos</Link>
@@ -62,7 +64,7 @@ export default function Navbar() {
                 {/* BOUTON CONNEXION */}
                 <div className="flex items-center">
                     <a
-                        href={merchantUrl}
+                        href={merchantUrlLogin}
                         className="bg-[#005F56] hover:bg-[#004d45] text-white px-6 py-2.5 rounded-lg text-sm font-bold tracking-wide transition shadow-sm"
                     >
                         Connexion
@@ -74,7 +76,7 @@ export default function Navbar() {
             {isOpen && (
                 <div className="lg:hidden bg-white border-b border-slate-100 px-6 py-4 space-y-3 flex flex-col text-sm font-medium text-slate-600">
                     <Link href="/" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">Accueil</Link>
-                    <Link href="/tarifs" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">Pricing</Link>
+                    <Link href="/tarifs" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">Tarifs</Link>
                     <Link href="/faq" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">FAQ</Link>
                     <Link href="/blog" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">Blog</Link>
                     <Link href="/about" onClick={() => setIsOpen(false)} className="hover:text-[#005F56] py-2 border-b border-slate-50">A propos</Link>

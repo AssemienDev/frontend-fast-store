@@ -60,7 +60,7 @@ export default function MerchantFinancePage() {
             {/* EN-TÊTE */}
             <div className="pb-6 border-b border-slate-100">
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">Finance</h1>
-                <p className="text-xs font-semibold text-slate-400 mt-1">Gérez vos revenus, retraits et consultez l'historique des transactions.</p>
+                <p className="text-xs font-semibold text-slate-400 mt-1">Gérez vos revenus, retraits et consultez l&#39;historique des transactions.</p>
             </div>
 
             {/* RANGÉE DE TABLEAUX DE BORD (IMAGE 1) */}
@@ -94,11 +94,10 @@ export default function MerchantFinancePage() {
                     </div>
 
                     {/* Revenu ce mois */}
-                    <div className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm flex items-start justify-between h-26">
+                    <div className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm flex items-start justify-between h-23">
                         <div>
                             <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Revenus ce mois</span>
                             <p className="text-lg font-black text-[#0F766E] mt-1.5">{summary.monthly_revenue.toLocaleString()} FCFA</p>
-                            <span className="text-[9px] font-bold text-tertiary block mt-1">↑ +15% vs mois dernier</span>
                         </div>
                         <span className="p-2 rounded-xl bg-emerald-50 text-tertiary shrink-0"><TrendingUp className="w-4 h-4" /></span>
                     </div>

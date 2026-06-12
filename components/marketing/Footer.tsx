@@ -17,7 +17,7 @@ export default function Footer() {
 
                 {/* COPYRIGHT */}
                 <div className="text-slate-500 text-xs text-center">
-                    &copy; {currentYear} LinkBoutik Commerce Cloud. All rights reserved.
+                    &copy; {currentYear} LinkBoutik. Tous droits réservés.
                 </div>
 
                 {/* LIENS DE LÉGISLATION */}

@@ -1,11 +1,11 @@
-// app/merchant/catalog/page.tsx
+// src/app/merchant/catalog/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { Search, Plus, Trash2, Edit2, Eye, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import {useMerchantAuthStore} from "@/store/merchantAuthStore";
+import { useMerchantAuthStore } from "@/store/merchantAuthStore";
 
 interface Product {
     id: string;
@@ -16,30 +16,42 @@ interface Product {
     stock_quantity: number;
     images: string[] | null;
     status: string; // ACTIVE | DRAFT
-    category_name?: string;
+    category_id?: string;
     slug: string;
 }
 
 export default function MerchantCatalogPage() {
     const { shop } = useMerchantAuthStore();
+
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
-    const [selectedCat, setSelectedCat] = useState("Tous");
+    const [selectedCat, setSelectedCat] = useState("0");
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
+
+    // États de contrôle SaaS (Paywall d'ajout)
+    const [isPremium, setIsPremium] = useState(false);
 
     // État pour la modale de suppression jolie
     const [productToDelete, setProductToDelete] = useState<Product | null>(null);
     const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
-        // Charge les produits et catégories au montage de l'espace marchand
+        // Charge en simultané les produits, les catégories et l'abonnement actif du marchand
         Promise.all([
             apiFetch<Product[]>("/merchant/products"),
-            apiFetch<any[]>("/merchant/categories") // Ou route d'extraction des catégories marchandes
-        ]).then(([prodsData, catsData]) => {
+            apiFetch<any[]>("/merchant/categories"),
+            apiFetch<any>("/merchant/subscription").catch(() => null) // Récupération sécurisée du forfait
+        ]).then(([prodsData, catsData, subData]) => {
             setProducts(prodsData);
             setCategories(catsData);
+
+            // Si le marchand dispose d'un forfait Premium actif (Business/Pro)
+            if (subData && (subData.plan_name.includes("Croissance") || subData.plan_name.includes("Pro") || subData.plan_name.includes("Business"))) {
+                setIsPremium(true);
+            } else {
+                setIsPremium(false);
+            }
             setLoading(false);
         }).catch(() => {
             setLoading(false);
@@ -52,7 +64,6 @@ export default function MerchantCatalogPage() {
             const updatedProd = await apiFetch<Product>(`/merchant/products/${id}/toggle`, {
                 method: "PATCH"
             });
-            // Met à jour l'état local instantanément
             setProducts(products.map(p => p.id === id ? { ...p, status: updatedProd.status } : p));
         } catch (err) {
             console.error("Échec du toggle status:", err);
@@ -62,25 +73,20 @@ export default function MerchantCatalogPage() {
     const getProductPreviewUrl = (productSlug: string) => {
         if (typeof window === "undefined" || !shop) return "#";
 
-        const hostname = window.location.hostname; // ex: "marchand.localhost" ou "marchand.linkboutik.com"
-        const protocol = window.location.protocol; // "http:" ou "https:"
-        const port = window.location.port ? `:${window.location.port}` : ""; // ":3000" en local, vide en prod
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const port = window.location.port ? `:${window.location.port}` : "";
 
-        // Récupérer le slug de la boutique du marchand connecté
-        // (Pensez à le stocker dans votre store marchand lors du login/onboarding)
         const shopSlug = shop.slug || "ma-boutique";
 
-        // 1. Gestion pour l'environnement de développement Local (localhost ou 127.0.0.1)
         if (hostname.includes("localhost") || hostname.includes("127.0.0.1")) {
             return `${protocol}//${shopSlug}.localhost${port}/${productSlug}`;
         }
 
-        // 2. Gestion pour la Production (ex: marchand.linkboutik.com -> maboutique.linkboutik.com)
-        const mainDomain = hostname.replace("marchand.", ""); // Extrait le domaine racine "linkboutik.com"
+        const mainDomain = hostname.replace("marchand.", "");
         return `${protocol}//${shopSlug}.${mainDomain}/${productSlug}`;
     };
 
-    // Traiter la suppression définitive de l'article
     const handleConfirmDelete = async () => {
         if (!productToDelete) return;
         setDeleting(true);
@@ -89,7 +95,6 @@ export default function MerchantCatalogPage() {
             await apiFetch(`/merchant/products/${productToDelete.id}`, {
                 method: "DELETE"
             });
-            // Retirer le produit du store local
             setProducts(products.filter(p => p.id !== productToDelete.id));
             setProductToDelete(null);
         } catch (err) {
@@ -99,38 +104,51 @@ export default function MerchantCatalogPage() {
         }
     };
 
-    // Filtrer les articles selon la recherche textuelle (Nom, SKU)
     const filteredProducts = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
             (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
 
-        if (selectedCat === "Tous") return matchesSearch;
-        return matchesSearch && p.category_name === selectedCat;
+        if (selectedCat == "0") return matchesSearch;
+        return matchesSearch && p.category_id === selectedCat;
     });
+
+    console.log(filteredProducts);
+
+    // BARRIÈRE D'AFFICHAGE SAAS : Un marchand gratuit (non premium) est limité à 30 produits maximum.
+    // S'il atteint ou dépasse 30 produits, le bouton "Ajouter un produit" disparaît.
+    const canAddProduct = isPremium || products.length < 30;
 
     return (
         <div className="p-6 md:p-8 space-y-8 max-w-6xl w-full mx-auto relative">
 
-            {/* EN-TÊTE DU CATALOGUE */}
+            {/* EN-TÊTE DU CATALOGUE (DYNAMISÉ AVEC LA BARRIÈRE DE PAIEMENT) */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
                 <div>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">Produits</h1>
                     <p className="text-xs font-semibold text-slate-400 mt-1">Gérez votre inventaire et vos disponibilités.</p>
                 </div>
-                <Link
-                    href="/catalog/new"
-                    className="px-5 py-3 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition flex items-center justify-center gap-2 shadow-md shadow-teal-900/10 cursor-pointer"
-                >
-                    <Plus className="w-4 h-4" /> Ajouter un produit
-                </Link>
+
+                {/* Le bouton d'ajout disparaît automatiquement de l'écran si la limite de l'offre gratuite est atteinte */}
+                {canAddProduct ? (
+                    <Link
+                        href="/catalog/new"
+                        className="px-5 py-3 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition flex items-center justify-center gap-2 shadow-md shadow-teal-900/10 cursor-pointer"
+                    >
+                        <Plus className="w-4 h-4" /> Ajouter un produit
+                    </Link>
+                ) : (
+                    <div className="px-4 py-2 rounded-xl bg-amber-50 text-[#F59E0B] border border-amber-200 text-xs font-bold leading-normal">
+                        Limite atteinte (Forfait gratuit 30/30)
+                    </div>
+                )}
             </div>
 
-            {/* BARRE DE RECHERCHE & FILTRES CATÉGORIES (ÉCRAN 'PRODUITS') */}
+            {/* BARRE DE RECHERCHE & FILTRES CATÉGORIES */}
             <div className="space-y-4">
                 <div className="relative max-w-2xl w-full">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-4 h-4" />
-          </span>
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Search className="w-4 h-4" />
+                    </span>
                     <input
                         type="text"
                         value={search}
@@ -140,22 +158,22 @@ export default function MerchantCatalogPage() {
                     />
                 </div>
 
-                {/* Pilules de filtres de catégories */}
                 <div className="flex flex-wrap gap-2 pt-2">
-                    {["Tous", ...categories].map((cat) => {
-                        const isActive = selectedCat === cat;
+                    {[{ id: "0", name: "Tous" }, ...categories].map((cat) => {
+                        const isActive = selectedCat === cat.id;
+
                         return (
                             <button
-                                key={cat}
+                                key={cat.id}
                                 type="button"
-                                onClick={() => setSelectedCat(cat)}
-                                className={`px-5 py-2 rounded-full text-xs font-bold border transition ${
+                                onClick={() => setSelectedCat(cat.id)}
+                                className={`px-5 py-2 rounded-full text-xs font-bold border transition cursor-pointer ${
                                     isActive
                                         ? "bg-[#F59E0B] text-white border-[#F59E0B]"
                                         : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
                                 }`}
                             >
-                                {cat}
+                                {cat.name}
                             </button>
                         );
                     })}
@@ -176,7 +194,6 @@ export default function MerchantCatalogPage() {
                         return (
                             <div key={prod.id} className="bg-white border border-slate-200/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between">
 
-                                {/* IMAGE DU PRODUIT AVEC BADGES D'ÉTATS DE MAQUETTE */}
                                 <div className="relative h-48 md:h-52 w-full bg-slate-50 border-b border-slate-100">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
@@ -185,23 +202,21 @@ export default function MerchantCatalogPage() {
                                         className="absolute inset-0 w-full h-full object-cover"
                                     />
 
-                                    {/* Pastilles d'état de votre maquette */}
                                     {isOutOfStock ? (
                                         <span className="absolute top-4 right-4 px-2.5 py-1 bg-rose-500 text-white text-[9px] font-black uppercase rounded-md tracking-wider">
-                                      Rupture
-                                    </span>
+                                            Rupture
+                                        </span>
                                     ) : isOffline ? (
                                         <span className="absolute top-4 right-4 px-2.5 py-1 bg-slate-400 text-white text-[9px] font-black uppercase rounded-md tracking-wider">
-                                      Hors ligne
-                                    </span>
+                                            Hors ligne
+                                        </span>
                                     ) : (
                                         <span className="absolute top-4 right-4 px-2.5 py-1 bg-[#22C55E] text-white text-[9px] font-black uppercase rounded-md tracking-wider">
-                                      En ligne
-                                    </span>
+                                            En ligne
+                                        </span>
                                     )}
                                 </div>
 
-                                {/* CORPS DE CARTE */}
                                 <div className="p-5 grow flex flex-col justify-between space-y-4">
                                     <div>
                                         <h3 className="text-sm font-black text-slate-800 leading-snug truncate">{prod.name}</h3>
@@ -211,7 +226,6 @@ export default function MerchantCatalogPage() {
                                     <div className="flex justify-between items-end">
                                         <p className="text-lg font-black text-primary">{prod.price.toLocaleString()} CFA</p>
 
-                                        {/* Indicateurs de stock colorés de la maquette */}
                                         <span className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold ${
                                             isOutOfStock
                                                 ? "bg-rose-50 text-rose-600"
@@ -219,14 +233,11 @@ export default function MerchantCatalogPage() {
                                                     ? "bg-amber-50 text-amber-600"
                                                     : "bg-slate-50 text-slate-600"
                                         }`}>
-                                          {prod.stock_quantity} en stock
+                                            {prod.stock_quantity} en stock
                                         </span>
                                     </div>
 
-                                    {/* BARRE D'ACTION INFÉRIEURE : EN-LIGNE TOGGLE, EDIT, DELETE, EYE PREVIEW */}
                                     <div className="flex justify-between items-center border-t border-slate-100 pt-4 mt-2">
-
-                                        {/* Interrupteur en ligne/hors ligne (Toggle switch) */}
                                         <div className="flex items-center">
                                             <input
                                                 type="checkbox"
@@ -237,18 +248,16 @@ export default function MerchantCatalogPage() {
                                             />
                                         </div>
 
-                                        {/* Raccourcis d'action (Eye, Edit, Trash) */}
                                         <div className="flex items-center gap-2 text-slate-400">
-
-                                            {/* L'Œil d'Aperçu Client demandé */}
-                                            <Link
+                                            <a
                                                 href={getProductPreviewUrl(prod.slug)}
                                                 target="_blank"
-                                                className="p-2 hover:bg-slate-50 hover:text-primary rounded-lg transition"
+                                                rel="noopener noreferrer"
+                                                className="p-2 hover:bg-slate-50 hover:text-primary rounded-lg transition cursor-pointer"
                                                 title="Prévisualiser sur votre boutique"
                                             >
                                                 <Eye className="w-4 h-4" />
-                                            </Link>
+                                            </a>
 
                                             <Link
                                                 href={`/catalog/edit/${prod.id}`}
@@ -266,7 +275,6 @@ export default function MerchantCatalogPage() {
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
-
                                     </div>
                                 </div>
 
@@ -281,17 +289,13 @@ export default function MerchantCatalogPage() {
                 </div>
             )}
 
-            {/* ========================================================= */}
-            {/* MODALE DE CONFIRMATION DE SUPPRESSION JOLIE (DRAWER COMPATIBLE) */}
-            {/* ========================================================= */}
+            {/* MODALE DE SUPPRESSION HYBRIDE */}
             {productToDelete && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
                     <div className="relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-sm w-full text-center space-y-6 shadow-2xl">
-
                         <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
                             <Trash2 className="w-6 h-6" />
                         </div>
-
                         <div>
                             <h3 className="text-base font-black text-slate-900">Confirmer la suppression</h3>
                             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
@@ -301,7 +305,6 @@ export default function MerchantCatalogPage() {
                                 *Cette action détruira définitivement toutes les images liées sur votre stockage Cloudflare R2.
                             </p>
                         </div>
-
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setProductToDelete(null)}
@@ -322,7 +325,6 @@ export default function MerchantCatalogPage() {
                                 )}
                             </button>
                         </div>
-
                     </div>
                 </div>
             )}

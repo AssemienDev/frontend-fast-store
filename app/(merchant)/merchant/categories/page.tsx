@@ -105,7 +105,7 @@ export default function MerchantCategoriesPage() {
     };
 
     return (
-        <div className="p-6 md:p-8 space-y-8 max-w-4xl w-full mx-auto relative">
+        <div className="p-6 md:p-8 space-y-8 max-w-6xl w-full mx-auto relative">
 
             {/* HEADER DE RECOUVREMENT */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-100">

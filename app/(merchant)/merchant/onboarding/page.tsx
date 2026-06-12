@@ -5,11 +5,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMerchantAuthStore } from "@/store/merchantAuthStore";
 import { apiFetch } from "@/lib/api";
-import { Store, Palette, Check, Phone, Layers, Coins, Image as ImageIcon } from "lucide-react";
+import {Store, Palette, Check, Phone, Layers, Coins, Image as ImageIcon, ArrowRight} from "lucide-react";
+import {HexColorPicker} from "react-colorful";
 
 export default function OnboardingPage() {
     const router = useRouter();
-    const { merchant, isAuthenticated, updateMerchant } = useMerchantAuthStore();
+    const { merchant, shop, setShop, isAuthenticated, updateMerchant } = useMerchantAuthStore();
 
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -27,6 +28,8 @@ export default function OnboardingPage() {
         logo_url: "",
         primary_color: "#0F766E", // Couleur de marque par défaut (Teal)
     });
+    // À insérer dans votre composant OnboardingPage :
+    const [showColorPicker, setShowColorPicker] = useState(false);
 
     const STANDARD_CATEGORIES = [
         "Mode, Vêtements & Chaussures",
@@ -34,7 +37,6 @@ export default function OnboardingPage() {
         "Électronique, Smartphones & Informatique",
         "Alimentation, Restauration & Épicerie",
         "Maison, Déco & Mobilier",
-        "Santé, Pharmacie & Bien-être",
         "Bijoux, Montres & Accessoires",
         "Éducation, Livres & Papeterie",
         "Autre (Saisir manuellement)"
@@ -105,9 +107,16 @@ export default function OnboardingPage() {
     };
 
     useEffect(() => {
+        console.log(shop)
         // Garde de verrouillage : redirige si pas connecté ou si le marchand a déjà sa boutique active
-        if (!isAuthenticated) {
+        if (!isAuthenticated || isAuthenticated && !merchant) {
             router.push("/register");
+        }
+        if(isAuthenticated && merchant && !merchant.is_verified){
+            router.push(`/verify-email?email=${encodeURIComponent(merchant.email)}`);
+        }
+        if(shop){
+            router.push("/");
         }
     }, [isAuthenticated, router]);
 
@@ -139,12 +148,13 @@ export default function OnboardingPage() {
         }
 
         try {
-            await apiFetch("/merchant/shop", {
+            const rep: any = await apiFetch("/merchant/shop", {
                 method: "POST",
                 body: JSON.stringify(shopData),
             });
 
             // On déverrouille l'accès du marchand connecté dans son store
+            setShop(rep.shop);
             updateMerchant({ role: "MERCHANT" }); // Confirme son onboarding complet
 
             router.push("/"); // Ouvre l'accès au tableau de bord !
@@ -154,9 +164,6 @@ export default function OnboardingPage() {
             setLoading(false);
         }
     };
-
-    // Liste de pastilles de couleurs pour l'étape 3
-    const brandColors = ["#0F766E", "#0284C7", "#D97706", "#DC2626", "#7C3AED", "#16A34A", "#09090B"];
 
     return (
         <div className="bg-[#F8FAFC] min-h-screen flex flex-col items-center justify-center py-12 px-6">
@@ -170,7 +177,7 @@ export default function OnboardingPage() {
                             <div
                                 key={s}
                                 className={`h-1.5 w-8 rounded-full transition-all duration-300 ${
-                                    s <= step ? "bg-primary" : "bg-slate-150"
+                                    s <= step ? "bg-primary" : "bg-slate-500"
                                 }`}
                             />
                         ))}
@@ -246,7 +253,7 @@ export default function OnboardingPage() {
                         </div>
 
                         <button type="submit" className="w-full py-4 rounded-xl bg-third hover:bg-primary text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm">
-                            Suivant →
+                            Suivant <ArrowRight className="size-5" />
                         </button>
                     </form>
                 )}
@@ -270,19 +277,19 @@ export default function OnboardingPage() {
                                     key: "MODERN",
                                     name: "Moderne",
                                     desc: "Épuré, professionnel et orienté vers la conversion avec des contrastes forts.",
-                                    img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" // Preview Moderne (Sombre, épuré)
+                                    img: "/modern.png" // Preview Moderne (Sombre, épuré)
                                 },
                                 {
                                     key: "MINIMALIST",
                                     name: "Minimaliste",
                                     desc: "Laisse vos produits respirer avec beaucoup d'espace blanc et des lignes fines.",
-                                    img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" // Preview Minimaliste (Blanc, lignes fines)
+                                    img: "/minimalist.png" // Preview Minimaliste (Blanc, lignes fines)
                                 },
                                 {
                                     key: "COLORFUL",
                                     name: "Coloré",
                                     desc: "Vibrant et audacieux, parfait pour les marques de mode, beauté et style de vie.",
-                                    img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=400&q=80" // Preview Coloré (Vibrant, abstrait)
+                                    img: "/colorer.png" // Preview Coloré (Vibrant, abstrait)
                                 }
                             ].map((theme) => {
                                 const isSelected = shopData.theme_style === theme.key;
@@ -341,9 +348,9 @@ export default function OnboardingPage() {
                             </button>
                             <button
                                 type="submit"
-                                className="w-2/3 py-4 rounded-xl bg-third hover:bg-primary text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition duration-150 flex items-center justify-center"
+                                className="w-2/3 py-4 rounded-xl bg-third hover:bg-primary text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                             >
-                                Suivant →
+                                Suivant <ArrowRight className="size-5" />
                             </button>
                         </div>
                     </form>
@@ -363,7 +370,7 @@ export default function OnboardingPage() {
                             {/* WhatsApp pro */}
                             <div>
                                 <label className="block text-[11px] font-black uppercase text-slate-700 tracking-wider mb-2">
-                                    Numéro WhatsApp Professionnel <span className="text-rose-500">*</span>
+                                    Numéro WhatsApp<span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                   <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -434,8 +441,6 @@ export default function OnboardingPage() {
                                             className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-700 focus:outline-none focus:border-primary transition"
                                         >
                                             <option value="XOF">XOF (FCFA UEMOA)</option>
-                                            <option value="XAF">XAF (FCFA CEMAC)</option>
-                                            <option value="USD">USD (Dollar)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -506,31 +511,74 @@ export default function OnboardingPage() {
                                 <label className="block text-[11px] font-black uppercase text-slate-700 tracking-wider mb-2">
                                     Couleur principale de votre boutique
                                 </label>
-                                <div className="flex flex-wrap items-center gap-3 mt-1.5 p-3 bg-slate-50/50 border border-slate-150 rounded-2xl">
-                                    {brandColors.map((color) => {
-                                        const isSelected = shopData.primary_color === color;
-                                        return (
-                                            <button
-                                                key={color}
-                                                type="button"
-                                                onClick={() => setShopData({ ...shopData, primary_color: color })}
-                                                style={{ backgroundColor: color }}
-                                                className={`w-8 h-8 rounded-full cursor-pointer transition transform active:scale-95 flex items-center justify-center text-white ${
-                                                    isSelected ? "ring-2 ring-offset-2 ring-slate-800" : ""
-                                                }`}
-                                                title={color}
-                                            >
-                                                {isSelected && <Check className="w-4 h-4" />}
-                                            </button>
-                                        );
-                                    })}
-                                    <input
-                                        type="color"
-                                        value={shopData.primary_color}
-                                        onChange={(e) => setShopData({ ...shopData, primary_color: e.target.value })}
-                                        className="w-8 h-8 rounded-md cursor-pointer border border-slate-200"
-                                        title="Choisir une autre couleur"
-                                    />
+                                {/* COULEUR DE MARQUE AVEC PASTILLES PRÉDÉFINIES ET SÉLECTEUR PERSONNALISÉ EN DIRECT */}
+                                <div>
+                                    {/* SÉLECTEUR DE COULEUR VISUEL ET FLOTTANT (REACT-COLORFUL POPOVER) */}
+                                    <div className="flex flex-wrap items-center gap-3 mt-1.5 p-3 bg-slate-50/50 border border-slate-150 rounded-2xl relative">
+
+                                        {/* 2. BOUTON DÉCLENCHEUR DU COLOR PICKER VISUEL */}
+                                        {(() => {
+                                            const getContrastClass = (hexColor: string) => {
+                                                const hex = hexColor.replace("#", "");
+                                                const r = parseInt(hex.substring(0, 2), 16) || 0;
+                                                const g = parseInt(hex.substring(2, 4), 16) || 0;
+                                                const b = parseInt(hex.substring(4, 6), 16) || 0;
+                                                const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+                                                return yiq >= 128 ? "text-slate-900" : "text-white";
+                                            };
+
+                                            const isCustomActive = shopData.primary_color;
+                                            const contrastClass = shopData.primary_color;
+
+                                            return (
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowColorPicker(!showColorPicker)}
+                                                        style={{ backgroundColor: isCustomActive ? shopData.primary_color : "#ffffff" }}
+                                                        className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition shadow-sm ${
+                                                            isCustomActive ? "ring-2 ring-offset-2 ring-slate-800" : ""
+                                                        }`}
+                                                        title="Choisir une couleur personnalisée"
+                                                    >
+                                                        {isCustomActive ? (
+                                                            <Check className={`w-4 h-4 z-10 drop-shadow-sm ${contrastClass}`} />
+                                                        ) : (
+                                                            <span className="text-xs z-10 select-none">🎨</span>
+                                                        )}
+                                                    </button>
+
+                                                    {/* POPOVER DU SPECTRE DE COULEURS FLOTTANT (S'affiche au clic) */}
+                                                    {showColorPicker && (
+                                                        <>
+                                                            {/* Arrière-plan invisible pour fermer le picker si on clique à côté (Click-away helper) */}
+                                                            <div
+                                                                className="fixed inset-0 z-30"
+                                                                onClick={() => setShowColorPicker(false)}
+                                                            />
+
+                                                            {/* Le cadre du spectre */}
+                                                            <div className="absolute left-0 bottom-10 mt-3 p-3 bg-white border border-slate-200 rounded-2xl shadow-xl z-40 animate-scaleIn">
+                                                                <HexColorPicker
+                                                                    color={shopData.primary_color}
+                                                                    onChange={(color) => setShopData({ ...shopData, primary_color: color })}
+                                                                />
+                                                                <div className="text-[10px] font-black text-slate-400 mt-2 text-center uppercase tracking-wider">
+                                                                    Glissez pour choisir
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* 3. CODE HEXADÉCIMAL EN DIRECT */}
+                                        <span className="text-[10px] font-black uppercase text-slate-400 bg-white border border-slate-150 px-2.5 py-1.5 rounded-lg ml-2 font-mono shadow-inner select-all">
+                                            {shopData.primary_color}
+                                          </span>
+
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -61,12 +61,12 @@ export default function NewProductPage() {
             .catch(() => {});
     }, []);
 
-    // Générer automatiquement les combinaisons de variantes croisées
+    // Générateur de combinaisons intelligent (Préserve les saisies manuelles existantes !)
     useEffect(() => {
         if (!form.has_variants) return;
 
-        const tailles = taillesInput.split(",").map(t => t.trim()).filter(t => t !== "");
-        const couleurs = couleursInput.split(",").map(c => c.trim()).filter(c => c !== "");
+        const tailles = taillesInput.split(",").map(t => t.trim()).filter(Boolean);
+        const couleurs = couleursInput.split(",").map(c => c.trim()).filter(Boolean);
 
         if (tailles.length === 0 && couleurs.length === 0) {
             setVariantRows([]);
@@ -74,26 +74,75 @@ export default function NewProductPage() {
         }
 
         const combinations: any[] = [];
+        const basePrice = form.price || 0;
+        const baseComparePrice = form.compare_at_price ? parseFloat(form.compare_at_price) : null;
 
-        // Algorithme de produit cartésien pour croiser Tailles & Couleurs
+        // A. Croisement Taille + Couleur
         if (tailles.length > 0 && couleurs.length > 0) {
             tailles.forEach(t => {
                 couleurs.forEach(c => {
-                    combinations.push({ taille: t, couleur: c, stock: 0, sku: `${form.sku ? form.sku + '-' : ''}${t}-${c}`.toUpperCase() });
+                    // ÉTAPE DE SÉCURITÉ : Chercher si cette ligne existait déjà avant la mise à jour
+                    const existing = variantRows.find(r => r.taille === t && r.couleur === c);
+
+                    combinations.push({
+                        taille: t,
+                        couleur: c,
+                        // Si elle existait, on garde sa valeur saisie, sinon on applique la valeur par défaut
+                        price: existing ? existing.price : basePrice,
+                        compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
+                        stock: existing ? existing.stock : 0,
+                        sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${t}-${c}`.toUpperCase()
+                    });
                 });
             });
-        } else if (tailles.length > 0) {
+        }
+        // B. Taille seule
+        else if (tailles.length > 0) {
             tailles.forEach(t => {
-                combinations.push({ taille: t, couleur: null, stock: 0, sku: `${form.sku ? form.sku + '-' : ''}${t}`.toUpperCase() });
+                const existing = variantRows.find(r => r.taille === t);
+                combinations.push({
+                    taille: t,
+                    couleur: null,
+                    price: existing ? existing.price : basePrice,
+                    compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
+                    stock: existing ? existing.stock : 0,
+                    sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${t}`.toUpperCase()
+                });
             });
-        } else {
+        }
+        // C. Couleur seule
+        else {
             couleurs.forEach(c => {
-                combinations.push({ taille: null, couleur: c, stock: 0, sku: `${form.sku ? form.sku + '-' : ''}${c}`.toUpperCase() });
+                const existing = variantRows.find(r => r.couleur === c);
+                combinations.push({
+                    taille: null,
+                    couleur: c,
+                    price: existing ? existing.price : basePrice,
+                    compare_at_price: existing ? existing.compare_at_price : baseComparePrice,
+                    stock: existing ? existing.stock : 0,
+                    sku: existing ? existing.sku : `${form.sku ? form.sku + '-' : ''}${c}`.toUpperCase()
+                });
             });
         }
 
         setVariantRows(combinations);
-    }, [taillesInput, couleursInput, form.has_variants, form.sku]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [taillesInput, couleursInput, form.has_variants]);
+    // Remarque : On retire form.price et form.sku des dépendances pour éviter de recalculer/écraser
+
+    // Gère la modification du prix d'une variante spécifique
+    const handleVariantPriceChange = (index: number, priceVal: number) => {
+        const updated = [...variantRows];
+        updated[index].price = priceVal;
+        setVariantRows(updated);
+    };
+
+    // Gère la modification du prix barré (réduction) d'une variante spécifique
+    const handleVariantComparePriceChange = (index: number, comparePriceVal: number | null) => {
+        const updated = [...variantRows];
+        updated[index].compare_at_price = comparePriceVal;
+        setVariantRows(updated);
+    };
 
     // Gère l'upload d'images vers R2 (Max 5Mo, max 5 images)
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,7 +237,7 @@ export default function NewProductPage() {
             {/* HEADER DE RECOUVREMENT */}
             <div className="bg-white border-b border-slate-200/60 sticky top-0 z-40">
                 <div className="max-w-3xl mx-auto h-16 px-6 flex items-center justify-between">
-                    <Link href="/merchant/catalog" className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition">
+                    <Link href="/catalog" className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-800 transition">
                         <ArrowLeft className="w-4 h-4" /> Retour au catalogue
                     </Link>
                     <span className="text-sm font-black text-slate-800">Nouveau produit</span>
@@ -271,33 +320,8 @@ export default function NewProductPage() {
                         </div>
                     </div>
 
-                    {/* SECTION 3 : TARIFICATION */}
-                    <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
-                        <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-3">Tarification</h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de vente * (FCFA)</label>
-                                <input
-                                    type="number" required value={form.price || ""}
-                                    onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-                                    placeholder="FCFA 0"
-                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de réduction / Prix barré (Optionnel)</label>
-                                <input
-                                    type="number" value={form.compare_at_price}
-                                    onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
-                                    placeholder="FCFA 0"
-                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SECTION 4 : OPTIONS DE VARIANTES DYNAMIQUES DE MAQUETTE */}
+                    {/* SECTION 3 : OPTIONS DE VARIANTES DYNAMIQUES AVEC MATRICE DE PRIX & REDUCTIONS INDIVIDUELLES */}
                     <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
                         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Variantes (Optionnel)</h3>
@@ -322,7 +346,7 @@ export default function NewProductPage() {
                                             type="text" value={taillesInput}
                                             onChange={(e) => setTaillesInput(e.target.value)}
                                             placeholder="Ex: S, M, L, XL"
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
                                         />
                                     </div>
                                     <div>
@@ -331,37 +355,73 @@ export default function NewProductPage() {
                                             type="text" value={couleursInput}
                                             onChange={(e) => setCouleursInput(e.target.value)}
                                             placeholder="Ex: Bleu, Rouge, Noir"
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none"
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
                                         />
                                     </div>
                                 </div>
 
-                                {/* TABLEAU GÉNERÉ DYNAMIQUE DES VARIANTES & STOCKS DÉTAILLÉS */}
+                                {/* TABLEAU COMPTABLE DYNAMIQUE DES VARIANTES (PRIX, REDUCTIONS, STOCKS & SKU) */}
                                 {variantRows.length > 0 && (
                                     <div className="space-y-3 pt-2">
-                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Matrice de Stock par combinaison</span>
-                                        <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/20">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Matrice de Stock & Tarification par variante</span>
+
+                                        <div className="border border-slate-200/60 rounded-2xl overflow-hidden bg-slate-50/20 divide-y divide-slate-100">
                                             {variantRows.map((vRow, idx) => (
-                                                <div key={idx} className="p-3.5 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-700">
-                                                    <div>
-                                                        {vRow.taille && <span className="px-2 py-1 bg-teal-50 text-primary rounded mr-2">Taille : {vRow.taille}</span>}
-                                                        {vRow.couleur && <span className="px-2 py-1 bg-amber-50 text-secondary rounded">Couleur : {vRow.couleur}</span>}
+                                                <div key={idx} className="p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 text-xs font-bold text-slate-700">
+
+                                                    {/* Libellé de la combinaison (Taille / Couleur) */}
+                                                    <div className="min-w-[150px]">
+                                                        {vRow.taille && <span className="px-2.5 py-1 bg-teal-50 text-primary rounded-lg border border-teal-100/50 mr-1.5">Taille: {vRow.taille}</span>}
+                                                        {vRow.couleur && <span className="px-2.5 py-1 bg-amber-50 text-secondary rounded-lg border border-amber-100/50">Couleur: {vRow.couleur}</span>}
                                                     </div>
 
-                                                    <div className="flex items-center gap-3 w-full md:w-auto">
-                                                        <input
-                                                            type="text" value={vRow.sku}
-                                                            onChange={(e) => handleVariantSkuChange(idx, e.target.value)}
-                                                            placeholder="SKU"
-                                                            className="w-1/2 md:w-28 p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                                                        />
-                                                        <input
-                                                            type="number" required value={vRow.stock || ""}
-                                                            onChange={(e) => handleVariantStockChange(idx, parseInt(e.target.value) || 0)}
-                                                            placeholder="Stock"
-                                                            className="w-1/2 md:w-20 p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                                                        />
+                                                    {/* Formulaire de saisie financière et logistique de la ligne */}
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
+                                                        {/* Prix de vente spécifique */}
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Prix (CFA)</label>
+                                                            <input
+                                                                type="number" required value={vRow.price || ""}
+                                                                onChange={(e) => handleVariantPriceChange(idx, parseFloat(e.target.value) || 0)}
+                                                                placeholder="Prix"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+
+                                                        {/* Prix barré de réduction spécifique */}
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Prix Barré (CFA)</label>
+                                                            <input
+                                                                type="number" value={vRow.compare_at_price || ""}
+                                                                onChange={(e) => handleVariantComparePriceChange(idx, e.target.value ? parseFloat(e.target.value) : null)}
+                                                                placeholder="Promo"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+
+                                                        {/* Stock spécifique */}
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Stock</label>
+                                                            <input
+                                                                type="number" required value={vRow.stock || "0"}
+                                                                onChange={(e) => handleVariantStockChange(idx, parseInt(e.target.value) || 0)}
+                                                                placeholder="Stock"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
+                                                            />
+                                                        </div>
+
+                                                        {/* SKU spécifique */}
+                                                        <div>
+                                                            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">SKU</label>
+                                                            <input
+                                                                type="text" value={vRow.sku}
+                                                                onChange={(e) => handleVariantSkuChange(idx, e.target.value)}
+                                                                placeholder="SKU"
+                                                                className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs uppercase"
+                                                            />
+                                                        </div>
                                                     </div>
+
                                                 </div>
                                             ))}
                                         </div>
@@ -369,7 +429,7 @@ export default function NewProductPage() {
                                 )}
                             </div>
                         ) : (
-                            /* INVENTAIRE STANDARD SI PAS DE VARIANTES */
+                            /* INVENTAIRE STANDARD SI PAS DE VARIANTES (Inchangé) */
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Stock initial *</label>
@@ -392,6 +452,32 @@ export default function NewProductPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* SECTION 4 : TARIFICATION */}
+                    {!form.has_variants && (<div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">
+                        <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-3">Tarification</h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de vente * (FCFA)</label>
+                                <input
+                                    type="number" required value={form.price || ""}
+                                    onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
+                                    placeholder="FCFA 0"
+                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Prix de réduction / Prix barré (Optionnel)</label>
+                                <input
+                                    type="number" value={form.compare_at_price}
+                                    onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
+                                    placeholder="FCFA 0"
+                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-800 focus:outline-none focus:border-primary transition"
+                                />
+                            </div>
+                        </div>
+                    </div>)}
 
                     {/* SECTION 5 : DESCRIPTION EDITABLE AVEC REACT QUILL (EDITEUR ENRICHI WYSIWYG) */}
                     <div className="p-6 bg-white border border-slate-200/60 rounded-3xl space-y-4">

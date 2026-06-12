@@ -2,6 +2,7 @@
 "use client";
 
 import { MousePointerClick, HeartHandshake, TrendingUp, Globe } from "lucide-react";
+import CountUp from "react-countup";
 
 export default function AboutPage() {
     const merchantUrl = process.env.NEXT_PUBLIC_MERCHANT_URL || "http://marchand.localhost:3000";
@@ -35,7 +36,7 @@ export default function AboutPage() {
                 <div className="lg:col-span-5 relative h-72 md:h-100 w-full rounded-3xl overflow-hidden shadow-lg border border-slate-200/45">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80"
+                        src="/aPropos.webp"
                         alt="Commerçante africaine gérant sa boutique sur smartphone"
                         className="absolute inset-0 w-full h-full object-cover"
                     />
@@ -73,7 +74,7 @@ export default function AboutPage() {
                             </div>
                             <h3 className="text-lg font-black text-slate-800">Proximité</h3>
                             <p className="mt-3 text-xs md:text-sm text-slate-500 leading-relaxed">
-                                Conçu en Afrique, pour l&#39;Afrique. Nous comprenons les réalités du marché local, de l&#39;intégration WhatsApp aux paiements mobiles.
+                                Conçu en Afrique, pour l&#39;Afrique. Nous comprenons les réalités du marché local, des moyens de paiements.
                             </p>
                         </div>
 
@@ -110,24 +111,40 @@ export default function AboutPage() {
                     {/* GRILLE DE COMPTEURS (STATS) */}
                     <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8">
 
-                        <div className="space-y-2">
-                            <p className="text-3xl md:text-4xl font-black tracking-tight">200+</p>
-                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">Marchands</p>
+                        <div className="space-y-2 text-center">
+                            <p className="text-3xl md:text-4xl font-black tracking-tight">
+                                <CountUp end={200} duration={2} suffix="+" />
+                            </p>
+                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">
+                                Marchands
+                            </p>
                         </div>
 
-                        <div className="space-y-2">
-                            <p className="text-3xl md:text-4xl font-black tracking-tight">3</p>
-                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">Pays</p>
+                        <div className="space-y-2 text-center">
+                            <p className="text-3xl md:text-4xl font-black tracking-tight">
+                                <CountUp end={3} duration={2} />
+                            </p>
+                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">
+                                Pays
+                            </p>
                         </div>
 
-                        <div className="space-y-2">
-                            <p className="text-3xl md:text-4xl font-black tracking-tight">50K+</p>
-                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">Transactions</p>
+                        <div className="space-y-2 text-center">
+                            <p className="text-3xl md:text-4xl font-black tracking-tight">
+                                <CountUp end={50} duration={2} suffix="K+" />
+                            </p>
+                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">
+                                Transactions
+                            </p>
                         </div>
 
-                        <div className="space-y-2">
-                            <p className="text-3xl md:text-4xl font-black tracking-tight">24/7</p>
-                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">Support</p>
+                        <div className="space-y-2 text-center">
+                            <p className="text-3xl md:text-4xl font-black tracking-tight">
+                                <CountUp end={24} duration={2} suffix="/7" />
+                            </p>
+                            <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-teal-200">
+                                Support
+                            </p>
                         </div>
 
                     </div>

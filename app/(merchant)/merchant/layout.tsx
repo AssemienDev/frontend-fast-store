@@ -27,8 +27,10 @@ export default function MerchantLayout({
     const router = useRouter();
     const pathname = usePathname();
     const { merchant, shop, setShop, isAuthenticated, clearCredentials } = useMerchantAuthStore();
+    const [isPremium, setIsPremium] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [planName, setPlanName] = useState<string>("Chargement...");
+    const [unreadCount, setUnreadCount] = useState<number>(0);
 
     useEffect(() => {
         setMounted(true);
@@ -48,32 +50,40 @@ export default function MerchantLayout({
 
         if (shouldLoadShop) {
             // 1. Charger les détails de la boutique
-            if (!shop) {
-                apiFetch<any>("/merchant/shop")
+
+            apiFetch<any>("/merchant/shop")
                     .then((shopData) => {
+                        console.log(shopData);
                         setShop(shopData);
                     })
                     .catch((err) => {
                         console.error("Échec du chargement de la boutique:", err);
                     });
-            }
-
-            // 2. NOUVEAU : Récupérer dynamiquement le forfait d'abonnement du marchand par l'API
-            apiFetch<any>("/merchant/subscription")
-                .then((subData) => {
-                    setPlanName(subData.plan_name);
-                })
-                .catch(() => {
-                    setPlanName("Forfait Gratuit");
-                });
         }
+        // 2. NOUVEAU : Récupérer dynamiquement le forfait d'abonnement du marchand par l'API
+        apiFetch<any>("/merchant/subscription")
+            .then((subData) => {
+                setPlanName(subData.plan_name);
+                setIsPremium(
+                    subData.plan_name?.toUpperCase() !== "STARTER"
+                );
+            })
+            .catch(() => {
+                setPlanName("Starter");
+            });
+        apiFetch<{ count: number }>("/merchant/notifications/unread-count")
+            .then((res) => {
+                setUnreadCount(res.count);
+            })
+            .catch(() => setUnreadCount(0));
     }, [isAuthenticated, merchant, pathname, shop, setShop]);
 
     if (!mounted) return null;
 
     const handleLogout = () => {
         clearCredentials();
-        router.push("/");
+        console.log("logout");
+        router.push("/login");
     };
 
     // SÉCURITÉ DE VÉRIFICATION DE L'ONBOARDING COMPLET :
@@ -100,11 +110,11 @@ export default function MerchantLayout({
 
 
     return (
-        <div className="drawer lg:drawer-open min-h-screen bg-slate-50/50 text-slate-850 antialiased">
+        <div className="drawer lg:drawer-open min-h-screen bg-white text-slate-800 antialiased">
             <input id="merchant-drawer" type="checkbox" className="drawer-toggle" />
 
             {/* SECTION DROITE : CONTENU DYNAMIQUE DES PAGES */}
-            <div className="drawer-content flex flex-col min-h-screen">
+            <div className="drawer-content bg-white flex flex-col min-h-screen">
 
                 {/* EN-TÊTE GLOBAL DES BOUTIQUES */}
                 <header className="bg-white border-b border-slate-200/60 px-6 h-16 flex items-center justify-between sticky top-0 z-40">
@@ -117,7 +127,7 @@ export default function MerchantLayout({
                         {/* Titre de la boutique */}
                         <div className="hidden md:block">
                             <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Ma Boutique</p>
-                            <h2 className="text-sm font-black text-slate-850">
+                            <h2 className="text-sm font-black text-slate-800">
                                 {shop ? shop.name : "Chargement..."}
                             </h2>
                         </div>
@@ -136,10 +146,17 @@ export default function MerchantLayout({
 
                     {/* ACTIONS : CLOCHE, PROFIL CLIQUABLE & DECONNEXION */}
                     <div className="flex items-center gap-3">
-                        <button className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition">
+                        <Link
+                            href="/notifications" // Redirige vers la page de fil de notifications
+                            className="relative p-2 rounded-full hover:bg-slate-100 text-slate-600 transition"
+                            title="Consulter vos notifications"
+                        >
                             <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-secondary border-2 border-white" />
-                        </button>
+                            {/* Affiche la puce orange uniquement s'il y a au moins 1 notification non lue ! */}
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-secondary border-2 border-white animate-pulse" />
+                            )}
+                        </Link>
                         <button
                             onClick={handleLogout}
                             className="w-9 h-9 rounded-full bg-slate-50 hover:bg-rose-50 border border-slate-100 text-slate-500 hover:text-rose-600 flex items-center justify-center transition cursor-pointer"
@@ -149,7 +166,7 @@ export default function MerchantLayout({
                         </button>
                         {/* NOUVEAU : BOUTON AVATAR DE PROFIL CLIQUABLE (REDIRIGE VERS LA PAGE PROFIL) */}
                         <Link
-                            href="/settings/profile"
+                            href="/profile"
                             className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 overflow-hidden flex items-center justify-center border border-slate-200 transition"
                             title="Mon Profil"
                         >
@@ -162,16 +179,16 @@ export default function MerchantLayout({
                 </header>
 
                 {/* CONTENU DE LA PAGE EN COURS DE LECTURE (DASHBOARD, PRODUITS, PARAMÈTRES, ETC.) */}
-                <main className="grow">
+                <main className="grow bg-white">
                     {children}
                 </main>
             </div>
 
             {/* SECTION GAUCHE : LE MENU DRAWER LATÉRAL COLLANT */}
-            <div className="drawer-side z-50">
+            <div className="drawer-side bg-white z-50">
                 <label htmlFor="merchant-drawer" className="drawer-overlay" />
 
-                <aside className="w-64 h-full bg-white border-r border-slate-200/60 p-6 flex flex-col justify-between">
+                <aside className="w-64 h-full bg-white  border-r border-slate-200/60 p-6 flex flex-col justify-between">
                     <div className="space-y-8">
 
                         {/* Fiche propriétaire de la boutique */}
@@ -193,6 +210,10 @@ export default function MerchantLayout({
                         <nav className="flex flex-col gap-1.5 text-xs font-bold text-slate-500">
                             <Link
                                 href="/"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition font-extrabold ${
                                     pathname === "/"
                                         ? "bg-third text-white shadow-sm"
@@ -203,6 +224,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/catalog"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/catalog")
                                         ? "bg-third text-white shadow-sm"
@@ -213,6 +238,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/categories"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/categories")
                                         ? "bg-third text-white shadow-sm"
@@ -221,28 +250,42 @@ export default function MerchantLayout({
                             >
                                 <ChartBarStacked  className="w-4 h-4 text-slate-400" /> Catégories
                             </Link>
-                            <Link
-                                href="/promo-code"
-                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
-                                    pathname.startsWith("/promo-code")
-                                        ? "bg-third text-white shadow-sm"
-                                        : "hover:bg-slate-50 hover:text-slate-800"
-                                }`}
-                            >
-                                <BadgePercent className="w-4 h-4 text-slate-400" /> Code promo
-                            </Link>
+                            { isPremium && (
+                                <Link
+                                    href="/promo-code"
+                                    onClick={() => {
+                                        const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                        if (drawer) drawer.checked = false;
+                                    }}
+                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
+                                        pathname.startsWith("/promo-code")
+                                            ? "bg-third text-white shadow-sm"
+                                            : "hover:bg-slate-50 hover:text-slate-800"
+                                    }`}
+                                >
+                                    <BadgePercent className="w-4 h-4 text-slate-400" /> Code promo
+                                </Link>
+                            )}
                             <Link
                                 href="/marketing-shop"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/marketing-shop")
                                         ? "bg-third text-white shadow-sm"
                                         : "hover:bg-slate-50 hover:text-slate-800"
                                 }`}
                             >
-                                <Megaphone className="w-4 h-4 text-slate-400" /> Code promo
+                                <Megaphone className="w-4 h-4 text-slate-400" /> Marketing
                             </Link>
                             <Link
                                 href="/commandes"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/commandes")
                                         ? "bg-third text-white shadow-sm"
@@ -253,6 +296,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/clients"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/clients")
                                         ? "bg-third text-white shadow-sm"
@@ -263,6 +310,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/finances"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/finances")
                                         ? "bg-third text-white shadow-sm"
@@ -272,9 +323,13 @@ export default function MerchantLayout({
                                 <Landmark  className="w-4 h-4 text-slate-400" /> Finances
                             </Link>
                             <Link
-                                href="/settings/billing"
+                                href="/billing"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
-                                    pathname.startsWith("/settings/billing")
+                                    pathname.startsWith("/billing")
                                         ? "bg-third text-white shadow-sm"
                                         : "hover:bg-slate-50 hover:text-slate-800"
                                 }`}
@@ -283,6 +338,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/settings"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/settings")
                                         ? "bg-third text-white shadow-sm"
@@ -293,6 +352,10 @@ export default function MerchantLayout({
                             </Link>
                             <Link
                                 href="/support"
+                                onClick={() => {
+                                    const drawer = document.getElementById("merchant-drawer") as HTMLInputElement;
+                                    if (drawer) drawer.checked = false;
+                                }}
                                 className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${
                                     pathname.startsWith("/support")
                                         ? "bg-third text-white shadow-sm"

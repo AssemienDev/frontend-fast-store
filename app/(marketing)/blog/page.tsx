@@ -29,36 +29,6 @@ const DEFAULT_POSTS: BlogPost[] = [
         cover_image_url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80",
         is_featured: true,
         published_at: "12 Octobre 2024"
-    },
-    {
-        id: "post-1",
-        title: "Comment gérer son stock efficacement quand on...",
-        slug: "comment-gerer-son-stock-efficacement",
-        category: "Conseils",
-        summary: "Des méthodes simples et des outils pratiques pour éviter les ruptures de stock et toujours satisfaire vos clients.",
-        content: "",
-        cover_image_url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=500&q=80",
-        published_at: "10 Oct 2024"
-    },
-    {
-        id: "post-2",
-        title: "L'histoire de Sarah : de 0 à 1000 commandes...",
-        slug: "histoire-de-sarah-1000-commandes",
-        category: "Success Stories",
-        summary: "Découvrez le parcours inspirant d'une créatrice de bijoux qui a structuré ses ventes avec LinkBoutik.",
-        content: "",
-        cover_image_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=500&q=80",
-        published_at: "05 Oct 2024"
-    },
-    {
-        id: "post-3",
-        title: "Nouveau : Acceptez les paiements Mobile Money",
-        slug: "nouveau-acceptez-les-paiements-mobile-money",
-        category: "Mises à jour",
-        summary: "Nous avons intégré de nouvelles solutions de paiement pour simplifier la vie de vos clients et sécuriser vos revenus.",
-        content: "",
-        cover_image_url: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?auto=format&fit=crop&w=500&q=80",
-        published_at: "01 Oct 2024"
     }
 ];
 
@@ -163,9 +133,9 @@ export default function BlogPage() {
                   </span>
                                 </div>
                                 <div className="lg:col-span-6 p-8 lg:p-12 flex flex-col justify-center">
-                  <span className="text-xs font-bold text-primary">
-                    {featuredPost.category} <span className="text-slate-300 mx-2">•</span> {featuredPost.published_at}
-                  </span>
+                                  <span className="text-xs font-bold text-primary">
+                                    {featuredPost.category} <span className="text-slate-300 mx-2">•</span> {featuredPost.published_at}
+                                  </span>
                                     <h2 className="text-xl md:text-2xl font-black text-slate-900 mt-4 leading-snug">
                                         {featuredPost.title}
                                     </h2>
@@ -176,7 +146,7 @@ export default function BlogPage() {
                                         href={`/blog/${featuredPost.slug}`}
                                         className="mt-6 text-xs font-black text-primary hover:opacity-85 transition inline-flex items-center gap-1.5"
                                     >
-                                        Lire l'article <ArrowRight className="w-4 h-4" />
+                                        Lire l&#39;article <ArrowRight className="w-4 h-4" />
                                     </a>
                                 </div>
                             </div>

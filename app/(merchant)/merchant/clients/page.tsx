@@ -28,6 +28,7 @@ export default function MerchantCustomersPage() {
 
     // Modales
     const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isPremium, setIsPremium] = useState(false);
     const [isPremiumOpen, setIsPremiumOpen] = useState(false);
     const [isPremiumOpen2, setIsPremiumOpen2] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -56,11 +57,24 @@ export default function MerchantCustomersPage() {
     const handleOpenAddModal = async (defaut:number) => {
         // Vérifier de manière asynchrone si le profil est Premium lors du clic
         try {
-            await apiFetch("/merchant/promos"); // Si cette route passe, il est Premium !
-            if(defaut === 1){
+            const subData = await apiFetch<any>("/merchant/subscription");
+
+            const isPremium =
+                subData.plan_name?.toUpperCase() !== "STARTER";
+
+            if (!isPremium) {
+                if (defaut === 1) {
+                    setIsPremiumOpen(true);
+                } else if (defaut === 2) {
+                    setIsPremiumOpen2(true);
+                }
+                return;
+            }
+
+            if (defaut === 1) {
                 setIsAddOpen(true);
-            }else if(defaut === 2){
-                router.push(`/clients/segments`);
+            } else if (defaut === 2) {
+                router.push("/clients/segments");
             }
         } catch (err: any) {
             if (err.status === 402) {
@@ -127,9 +141,9 @@ export default function MerchantCustomersPage() {
             {/* RANGÉE DE RECHERCHE ET BADGE D'ANNULATION DU FILTRE DE SEGMENT */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                 <div className="relative flex-grow">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-4 h-4" />
-          </span>
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Search className="w-4 h-4" />
+                  </span>
                     <input
                         type="text"
                         value={search}

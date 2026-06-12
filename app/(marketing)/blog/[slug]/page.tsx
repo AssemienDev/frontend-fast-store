@@ -48,59 +48,6 @@ const LOCAL_ARTICLES_DB: Record<string, BlogPost> = {
       <h3>5. Créez un programme de fidélisation simple</h3>
       <p>Conserver un client existant coûte 5 fois moins cher que d'en acquérir un nouveau. Utilisez notre CRM pour identifier vos meilleurs clients et envoyez-leur un code promo exclusif (ex: SOLDES10) par message de remerciement après leur achat.</p>
     `
-    },
-    "comment-gerer-son-stock-efficacement": {
-        id: "post-1",
-        title: "Comment gérer son stock efficacement quand on vend sur les réseaux sociaux ?",
-        slug: "comment-gerer-son-stock-efficacement",
-        category: "Conseils",
-        summary: "Des méthodes simples et des outils pratiques pour éviter les ruptures de stock et toujours satisfaire vos clients.",
-        cover_image_url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
-        published_at: "10 Octobre 2024",
-        reading_time: "4 min de lecture",
-        content: `
-      <p>La gestion de stock est le talon d'Achille de nombreux commerçants sur les réseaux sociaux. Vendre un article que vous n'avez plus en stock à un client génère de la frustration et dégrade l'image de votre marque. Voici comment professionnaliser votre inventaire.</p>
-      
-      <h3>Le problème des ventes multicanales</h3>
-      <p>Lorsque vous publiez un produit sur Facebook, Instagram et WhatsApp en même temps, les commandes peuvent affluer de toutes parts. Sans outil centralisé, il est presque impossible de savoir en temps réel s'il vous reste 2 ou 0 robes rouges en taille M.</p>
-      
-      <h3>Centralisez votre inventaire</h3>
-      <p>La solution consiste à utiliser une plateforme centrale de gestion. Lorsque vous enregistrez vos produits sur LinkBoutik, vous pouvez définir la quantité exacte disponible pour chaque article. Le système décompte automatiquement les pièces vendues et empêche les clients d'acheter un produit en rupture de stock.</p>
-    `
-    },
-    "histoire-de-sarah-1000-commandes": {
-        id: "post-2",
-        title: "L'histoire de Sarah : de 0 à 1000 commandes grâce à sa boutique automatisée",
-        slug: "histoire-de-sarah-1000-commandes",
-        category: "Success Stories",
-        summary: "Découvrez le parcours inspirant d'une créatrice de bijoux qui a structuré ses ventes avec LinkBoutik.",
-        cover_image_url: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80",
-        published_at: "05 Octobre 2024",
-        reading_time: "6 min de lecture",
-        content: `
-      <p>Sarah a lancé sa marque de bijoux artisanaux depuis sa chambre à Abidjan. En moins de 18 mois, elle est passée de quelques ventes amicales à plus de 1000 commandes expédiées à travers toute la sous-région. Elle nous partage sa formule de réussite.</p>
-      
-      <blockquote>"Je passais 8 heures par jour sur mon téléphone à donner mes tarifs et mes frais de livraison. Aujourd'hui, ma boutique en ligne fait tout le travail pendant que je me concentre sur la création."</blockquote>
-      
-      <h3>L'élément déclencheur : l'automatisation</h3>
-      <p>Sarah explique qu'elle perdait de nombreux clients car elle mettait parfois plusieurs heures à répondre aux messages d'intérêt sur Instagram. En installant son lien LinkBoutik dans sa bio, ses abonnés ont pu commencer à commander en autonomie totale, même au milieu de la nuit.</p>
-    `
-    },
-    "nouveau-acceptez-les-paiements-mobile-money": {
-        id: "post-3",
-        title: "Nouveau : Acceptez les paiements Mobile Money en ligne sur LinkBoutik",
-        slug: "nouveau-acceptez-les-paiements-mobile-money",
-        category: "Mises à jour",
-        summary: "Nous avons intégré de nouvelles solutions de paiement pour simplifier la vie de vos clients et sécuriser vos revenus.",
-        cover_image_url: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?auto=format&fit=crop&w=1200&q=80",
-        published_at: "01 Octobre 2024",
-        reading_time: "3 min de lecture",
-        content: `
-      <p>Nous sommes fiers de vous annoncer le déploiement d'une mise à jour majeure très attendue : l'intégration des paiements en ligne par Mobile Money (Wave, Orange Money, MTN, Moov) directement sur vos vitrines LinkBoutik.</p>
-      
-      <h3>Sécurisez vos acomptes et évitez les faux bonds</h3>
-      <p>La livraison contre remboursement comporte des risques élevés de refus de livraison ou de clients absents. Avec notre nouveau système de paiement, vous pouvez désormais configurer un paiement complet ou un acompte en ligne obligatoire au moment de l'achat pour couvrir les frais de livraison.</p>
-    `
     }
 };
 
@@ -205,8 +152,8 @@ export default function BlogPostDetailPage() {
                 {/* SIGN-OFF DE FIN D'ARTICLE */}
                 <div className="border-t border-slate-200 mt-16 pt-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-2xl border shadow-sm">
                     <div>
-                        <h4 className="font-black text-slate-800 text-sm">Développez votre commerce social</h4>
-                        <p className="text-xs text-slate-500 mt-1">Gérez vos clients, stocks et paiements WhatsApp de manière professionnelle.</p>
+                        <h4 className="font-black text-slate-800 text-sm">Développez votre commerce</h4>
+                        <p className="text-xs text-slate-500 mt-1">Gérez vos clients, stocks et paiements de manière professionnelle.</p>
                     </div>
                     <a
                         href={merchantUrl}

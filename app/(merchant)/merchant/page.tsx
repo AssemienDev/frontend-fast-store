@@ -10,7 +10,7 @@ import {
     Store,
     TrendingUp,
     Check,
-    ChevronRight
+    ChevronRight, ShieldAlert
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
@@ -37,7 +37,7 @@ interface DashboardStats {
 
 export default function MerchantHomePage() {
     const router = useRouter();
-    const { merchant, shop, isAuthenticated} = useMerchantAuthStore();
+    const { merchant, setShop, shop, isAuthenticated} = useMerchantAuthStore();
     const [mounted, setMounted] = useState(false);
 
     // État pour les données du dashboard
@@ -46,6 +46,10 @@ export default function MerchantHomePage() {
     const [loadingStats, setLoadingStats] = useState(true);
 
     const [loading, setLoading] = useState(true);
+
+    // États de contrôle SaaS (Paywall d'ajout)
+    const [products, setProducts] = useState<any>([]);
+    const [isPremium, setIsPremium] = useState(false);
 
     const [copied, setCopied] = useState(false);
 
@@ -81,34 +85,53 @@ export default function MerchantHomePage() {
     useEffect(() => {
         setMounted(true);
 
-        // Garde d'authentification et de redirection automatique
+        // 1. GARDE-FOU DE REDIRECTION ET D'AUTHENTIFICATION COMPLET
         if (!isAuthenticated) {
-            router.push("/register");
-        } else if (merchant && !merchant.is_verified) {
-            // Si connecté mais non-vérifié (OTP)
-            router.push(`/verify-email?email=${encodeURIComponent(merchant.email)}`);
-        } else if (merchant && merchant.role === "MERCHANT") {
-            // Si l'onboarding de boutique (3 étapes) n'est pas encore complété
-            router.push("/onboarding");
+            router.push("/register"); // Redirection vers l'inscription marchand
+            return;
         }
 
-        // Chargement des données du dashboard
-        Promise.all([
-            apiFetch<DashboardStats>("/merchant/dashboard/stats"),
-            apiFetch<any[]>("/merchant/orders/recent") // Adaptez le schéma si nécessaire
-        ]).then(([statsData, ordersData]) => {
-            setStats(statsData);
-            setRecentOrders(ordersData);
-            setLoading(false);
-        }).catch((err) => {
-            console.error("Erreur lors du chargement du dashboard:", err);
-            setLoading(false);
-        });
+        if (merchant && !merchant.is_verified) {
+            router.push(`/verify-email?email=${encodeURIComponent(merchant.email)}`); // Redirection OTP
+            return;
+        }
+
+        if (mounted && isAuthenticated && !shop) {
+            // Si connecté et vérifié mais pas de boutique en BDD -> Redirection Onboarding
+            router.push("/onboarding");
+            return;
+        }
+
+        if (isAuthenticated && merchant?.is_verified && shop) {
+            Promise.all([
+                apiFetch<DashboardStats>("/merchant/dashboard/stats"),
+                apiFetch<any[]>("/merchant/orders/recent"),
+                apiFetch<any>("/merchant/subscription").catch(() => null), // Récupération sécurisée du forfait
+                apiFetch<any>("/merchant/products"),
+            ])
+                .then(([statsData, ordersData, subData, prodsData]) => {
+                    setStats(statsData);
+                    setRecentOrders(ordersData);
+                    if (subData && (subData.plan_name.includes("Croissance") || subData.plan_name.includes("Pro") || subData.plan_name.includes("Business"))) {
+                        setIsPremium(true);
+                    } else {
+                        setIsPremium(false);
+                    }
+                    setProducts(prodsData);
+                    setLoading(false);
+                })
+                .catch((err) => {
+                    console.error("Erreur lors du chargement du dashboard:", err);
+                    setLoading(false);
+                });
+        }
     }, [isAuthenticated, merchant, router]);
 
     if (!mounted) return null;
 
-    if (!isAuthenticated || !merchant || !merchant.is_verified || merchant.role === "MERCHANT") {
+    const canAddProduct = isPremium || products.length < 30;
+
+    if (!isAuthenticated || !merchant || !merchant.is_verified || !shop || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <div className="text-center">
@@ -131,7 +154,7 @@ export default function MerchantHomePage() {
     }
 
     return (
-        <div className="p-6 md:p-8 space-y-8 max-w-6xl w-full mx-auto">
+        <div className="p-6 md:p-8 bg-[#F7F9FB] space-y-8 max-w-6xl w-full mx-auto">
 
             {/* 1. BANDEAU DE BIENVENUE & ACTIONS RAPIDES */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-200/50">
@@ -144,9 +167,14 @@ export default function MerchantHomePage() {
 
                 {/* Raccourcis d'actions marchandes */}
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                    {canAddProduct ? (
                     <Link href="/catalog/new" className="flex-1 md:flex-none px-5 py-3 rounded-xl bg-primary text-white font-extrabold text-xs hover:opacity-95 transition flex items-center justify-center gap-2 shadow-md shadow-primary/10 cursor-pointer">
                         <Plus className="w-4 h-4" /> Ajouter un produit
-                    </Link>
+                    </Link>) : (
+                        <div className="px-4 py-2 rounded-xl bg-amber-50 text-[#F59E0B] border border-amber-200 text-xs font-bold leading-normal">
+                            Limite atteinte (Forfait gratuit 30/30)
+                        </div>
+                    )}
                     {/* BOUTON COPIER LE LIEN DE BOUTIQUE DYNAMIQUE (DASHBOARD) */}
                     <button
                         onClick={handleCopyShopLink}
@@ -163,9 +191,16 @@ export default function MerchantHomePage() {
                             </>
                         ) : (
                             <>
-                                <ShoppingBag className="w-4 h-4" /> Partager lien WhatsApp
+                                <ShoppingBag className="w-4 h-4" /> Copier le lien de la boutique
                             </>
                         )}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => router.push("/billing")}
+                        className="cursor-pointer py-3 px-5 rounded-xl bg-[#F59E0B] text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                    >
+                        <ShieldAlert className="w-4 h-4" /> Passer au plan Business
                     </button>
                 </div>
             </div>
@@ -174,7 +209,7 @@ export default function MerchantHomePage() {
             {stats && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Ventes du jour */}
-                    <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+                    <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm flex flex-col justify-between h-35">
                         <div className="flex justify-between items-start">
                             <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Ventes du jour</span>
                             <span className="p-1.5 rounded-lg bg-emerald-50 text-tertiary"><TrendingUp className="w-4 h-4" /></span>
@@ -185,7 +220,7 @@ export default function MerchantHomePage() {
                     </div>
 
                     {/* Revenus du mois */}
-                    <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm flex flex-col justify-between h-40">
+                    <div className="p-6 bg-white border border-slate-200/50 rounded-2xl shadow-sm flex flex-col justify-between h-35">
                         <div className="flex justify-between items-start">
                             <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Revenus du mois</span>
                             <span className="p-1.5 rounded-lg bg-teal-50 text-primary"><Store className="w-4 h-4" /></span>

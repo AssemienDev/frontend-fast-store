@@ -88,8 +88,8 @@ export default function WithdrawalRequestPage() {
     };
 
     return (
-        <div className="bg-[#F8FAFC] min-h-screen py-16 md:py-24">
-            <div className="max-w-xl mx-auto px-6">
+        <div className="bg-[#F8FAFC] min-h-screen py-4 md:py-8">
+            <div className="max-w-4xl mx-auto px-6">
 
                 {/* HEADER */}
                 <div className="flex items-center gap-4 mb-10 pb-4 border-b border-slate-200/50">

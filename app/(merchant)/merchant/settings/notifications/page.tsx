@@ -21,6 +21,7 @@ export default function MerchantNotificationsSettingsPage() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isPremium, setIsPremium] = useState(false); // Gère la modale d'upgrade
     const [isPremiumOpen, setIsPremiumOpen] = useState(false); // Gère la modale d'upgrade
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -40,6 +41,13 @@ export default function MerchantNotificationsSettingsPage() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
+
+        apiFetch<any>("/merchant/subscription")
+            .then((subData) => {
+                setIsPremium(
+                    subData.plan_name?.toUpperCase() !== "STARTER"
+                );
+            })
     }, []);
 
     const handleWhatsappToggle = (checked: boolean, field: "order_whatsapp" | "finance_whatsapp") => {
@@ -90,7 +98,7 @@ export default function MerchantNotificationsSettingsPage() {
             {/* EN-TÊTE DE LA PAGE */}
             <div className="pb-6 border-b border-slate-100">
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">Notifications</h1>
-                <p className="text-xs font-semibold text-slate-400 mt-1">Stay Updated - Choisissez comment vous souhaitez recevoir vos alertes.</p>
+                <p className="text-xs font-semibold text-slate-400 mt-1">Restez informé - Choisissez comment vous souhaitez recevoir vos alertes.</p>
             </div>
 
             {error && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold rounded-2xl">{error}</div>}
@@ -116,7 +124,6 @@ export default function MerchantNotificationsSettingsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h4 className="text-xs font-bold text-slate-700">Alertes WhatsApp</h4>
-                                <p className="text-[10px] text-slate-400 font-semibold mt-1">Réception instantanée pour chaque nouvelle commande.</p>
                             </div>
                             <input
                                 type="checkbox"
@@ -132,12 +139,26 @@ export default function MerchantNotificationsSettingsPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h4 className="text-xs font-bold text-slate-700">E-mail</h4>
-                                <p className="text-[10px] text-slate-400 font-semibold mt-1">Résumés et détails complets des factures de commandes.</p>
                             </div>
                             <input
                                 type="checkbox"
                                 checked={form.order_email}
                                 onChange={(e) => setForm({ ...form, order_email: e.target.checked })}
+                                className="toggle toggle-primary toggle-sm cursor-pointer"
+                            />
+                        </div>
+
+                        <hr className="border-slate-100" />
+
+                        {/* Toggle E-mail */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-xs font-bold text-slate-700">Dans l&#39;application</h4>
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={form.order_in_app}
+                                onChange={(e) => setForm({ ...form, order_in_app: e.target.checked })}
                                 className="toggle toggle-primary toggle-sm cursor-pointer"
                             />
                         </div>
@@ -157,13 +178,40 @@ export default function MerchantNotificationsSettingsPage() {
                         {/* Toggle E-mail */}
                         <div className="flex items-center justify-between">
                             <div>
+                                <h4 className="text-xs font-bold text-slate-700">Dans l&#39;application</h4>
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={form.finance_whatsapp}
+                                onChange={(e) => setForm({ ...form, finance_whatsapp: e.target.checked })}
+                                className="toggle toggle-primary toggle-sm cursor-pointer"
+                            />
+                        </div>
+                        <hr className="border-slate-100" />
+
+                        {/* Toggle E-mail */}
+                        <div className="flex items-center justify-between">
+                            <div>
                                 <h4 className="text-xs font-bold text-slate-700">E-mail</h4>
-                                <p className="text-[10px] text-slate-400 font-semibold mt-1">Reçus d'abonnements, factures et rapports mensuels de ventes.</p>
                             </div>
                             <input
                                 type="checkbox"
                                 checked={form.finance_email}
                                 onChange={(e) => setForm({ ...form, finance_email: e.target.checked })}
+                                className="toggle toggle-primary toggle-sm cursor-pointer"
+                            />
+                        </div>
+                        <hr className="border-slate-100" />
+
+                        {/* Toggle E-mail */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-xs font-bold text-slate-700">Dans l&#39;application</h4>
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={form.finance_in_app}
+                                onChange={(e) => setForm({ ...form, finance_in_app: e.target.checked })}
                                 className="toggle toggle-primary toggle-sm cursor-pointer"
                             />
                         </div>
@@ -197,17 +245,17 @@ export default function MerchantNotificationsSettingsPage() {
                         <div>
                             <h3 className="text-base font-black text-slate-900">Fonctionnalité Premium</h3>
                             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                                La réception instantanée d'alertes de ventes et de commandes directement sur votre compte WhatsApp est réservée exclusivement aux membres **Business** et **Pro**.
+                                La réception instantanée d&#39;alertes de ventes et de commandes directement sur votre compte WhatsApp est réservée exclusivement aux membres **Business** et **Pro**.
                             </p>
                         </div>
                         <div className="flex gap-3">
                             <button type="button" onClick={() => setIsPremiumOpen(false)} className="w-1/2 py-3 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-xs">Fermer</button>
                             <button
                                 type="button"
-                                onClick={() => router.push("/settings/billing")}
-                                className="w-1/2 py-3 rounded-xl bg-[#F59E0B] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                                onClick={() => router.push("/billing")}
+                                className="w-1/2 py-3 px-5 rounded-xl bg-[#F59E0B] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                             >
-                                <ShieldAlert className="w-4 h-4" /> Activer l'offre Premium
+                              Activer l&#39;offre Premium
                             </button>
                         </div>
                     </div>

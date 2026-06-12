@@ -149,7 +149,7 @@ export default function MerchantPromosPage() {
                     Générez des codes de réduction personnalisés pour vos Stories, fidélisez vos meilleurs acheteurs et augmentez vos ventes sur WhatsApp ! Cette fonctionnalité d'élite requiert un forfait **Business** ou **Pro**.
                 </p>
                 <button
-                    onClick={() => router.push("/settings/billing")}
+                    onClick={() => router.push("/billing")}
                     className="px-6 py-3 rounded-xl bg-primary text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition inline-flex items-center gap-2 cursor-pointer shadow-md shadow-primary/10"
                 >
                     <ShieldAlert className="w-4 h-4" /> Passer au forfait Premium

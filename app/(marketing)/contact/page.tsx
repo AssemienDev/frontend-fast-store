@@ -16,20 +16,32 @@ export default function ContactPage() {
         setStatus(null);
 
         try {
+            const payload = {
+                name: form.name.trim(),
+                email: form.email.trim(),
+                message: form.message.trim(),
+                subject: form.subject.trim() || null,
+                imp: form.imp.trim() || null,
+            };
+
             await apiFetch("/storefront/contact", {
                 method: "POST",
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
+
             setStatus({
                 success: true,
                 msg: "Votre message a bien été envoyé. Notre équipe commerciale vous recontactera très rapidement."
             });
-            // Réinitialiser le formulaire
+
             setForm({ name: "", email: "", subject: "", message: "", imp: "" });
+
         } catch (err: any) {
+            console.log("FULL ERROR:", err);
+
             setStatus({
                 success: false,
-                msg: err.message || "Une erreur est survenue lors de l'envoi de votre message. Veuillez réessayer."
+                msg: "Un soucis est survenu lors de l'envoi du message."
             });
         } finally {
             setLoading(false);
@@ -145,7 +157,7 @@ export default function ContactPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-4 rounded-xl bg-third text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                                className="w-full cursor-pointer py-4 rounded-xl bg-third text-white font-extrabold text-xs md:text-sm hover:opacity-95 transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                             >
                                 {loading ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -174,7 +186,7 @@ export default function ContactPage() {
                                 <div>
                                     <h4 className="font-black text-slate-800 text-sm md:text-base">Support WhatsApp</h4>
                                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                                        Réponse rapide garantie pour les marchands.
+                                        Réponse rapide.
                                     </p>
                                     <a
                                         href="https://wa.me/2250100000000" // Ajustez avec votre numéro de support
