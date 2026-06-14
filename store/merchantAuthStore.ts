@@ -24,6 +24,7 @@ interface ShopProfile {
     whatsapp_number: string | null;
     address: string | null;
     business_category: string | null;
+    is_test_mode: boolean;
 }
 
 

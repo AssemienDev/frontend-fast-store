@@ -17,6 +17,8 @@ import {
 import Link from "next/link";
 import {apiFetch} from "@/lib/api";
 import Image from "next/image";
+import { FaWrench } from "react-icons/fa";
+import {TbPointFilled} from "react-icons/tb";
 
 
 export default function MerchantLayout({
@@ -31,6 +33,8 @@ export default function MerchantLayout({
     const [mounted, setMounted] = useState(false);
     const [planName, setPlanName] = useState<string>("Chargement...");
     const [unreadCount, setUnreadCount] = useState<number>(0);
+
+    const [togglingMode, setTogglingMode] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -86,6 +90,19 @@ export default function MerchantLayout({
         router.push("/login");
     };
 
+    const handleToggleTestMode = async () => {
+        if (!shop || togglingMode) return;
+        setTogglingMode(true);
+        try {
+            const updatedShop = await apiFetch<any>("/merchant/shop/toggle-mode", { method: "PATCH" });
+            setShop(updatedShop); // Met à jour l'état global du store Zustand
+        } catch (err) {
+            console.error("Échec de basculement de mode:", err);
+        } finally {
+            setTogglingMode(false);
+        }
+    };
+
     // SÉCURITÉ DE VÉRIFICATION DE L'ONBOARDING COMPLET :
     // Le Drawer ne doit s'afficher que si le marchand est entièrement connecté, vérifié,
     // et qu'il n'est pas sur les écrans d'authentification/onboarding.
@@ -132,6 +149,30 @@ export default function MerchantLayout({
                             </h2>
                         </div>
                     </div>
+
+                    {shop && (
+                        <div className="flex items-center gap-2 p-1.5 px-3 rounded-full bg-slate-50 border border-slate-150">
+                            {/* Commutateur de mode (Toggle switch) */}
+                            <input
+                                type="checkbox"
+                                checked={!shop.is_test_mode} // Si is_test_mode est False, la boutique est Live (checked)
+                                disabled={togglingMode}
+                                onChange={handleToggleTestMode}
+                                className="toggle toggle-success toggle-xs cursor-pointer disabled:opacity-50"
+                            />
+
+                            {/* Affichage des badges de couleur de la maquette */}
+                            {shop.is_test_mode ? (
+                                <span className="text-[9px] font-black text-[#F59E0B] uppercase tracking-wide flex items-center gap-1 animate-pulse">
+                                    <FaWrench className="text-[#F59E0B]" /> Mode Test
+                                </span>
+                            ) : (
+                                <span className="text-[9px] font-black text-[#22C55E] uppercase tracking-wide flex items-center gap-1">
+                                    <TbPointFilled className="text-[#22C55E]" /> Boutique Live
+                                </span>
+                            )}
+                        </div>
+                    )}
 
                     {/* Logo LinkBoutik */}
                     <div className="flex items-center gap-2">

@@ -1,14 +1,13 @@
-// app/[shop_slug]/page.tsx
+// app/[shop_slug]/catalog/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
-// Importation de nos 3 thèmes de marque distincts
-import ModernHome from "@/components/themes/modern/ModernHome";
-import MinimalistHome from "@/components/themes/minimalist/MinimalistHome";
-import ColorfulHome from "@/components/themes/colorful/ColorfulHome";
+import ModernCatalog from "@/components/themes/modern/ModernCatalog";
+import MinimalistCatalog from "@/components/themes/minimalist/MinimalistCatalog";
+import ColorfulCatalog from "@/components/themes/colorful/ColorfulCatalog";
 
 interface ShopConfig {
     id: string;
@@ -40,11 +39,17 @@ interface Product {
     images: string[] | null;
     category_name?: string;
     is_featured: boolean;
+    created_at: string;
 }
 
-export default function ShopStorefrontHomePage() {
+export default function ShopStorefrontCatalogPage() {
     const router = useRouter();
     const { shop_slug } = useParams() as { shop_slug: string };
+    const searchParams = useSearchParams();
+
+    // Extraction des filtres depuis l'URL
+    const activeCategoryId = searchParams.get("category") || "";
+    const activeSort = searchParams.get("sort") || "newest"; // "newest" | "price_asc" | "price_desc"
 
     const [shop, setShop] = useState<ShopConfig>();
     const [categories, setCategories] = useState<Category[]>([]);
@@ -55,16 +60,17 @@ export default function ShopStorefrontHomePage() {
 
     useEffect(() => {
         if (!shop_slug) return;
+        setLoading(true);
 
-        // Charger les configurations, les catégories et les produits vedettes de la boutique
+        // Charger les détails, catégories et produits triés/filtrés de la boutique
         Promise.all([
             apiFetch<ShopConfig>(`/storefront/${shop_slug}/shop`).catch(() => null),
             apiFetch<Category[]>(`/storefront/${shop_slug}/categories`).catch(() => []),
-            apiFetch<Product[]>(`/storefront/${shop_slug}/products?is_featured=true`).catch(() => [])
+            apiFetch<Product[]>(`/storefront/${shop_slug}/products?category_id=${activeCategoryId}&sort_by=${activeSort}`).catch(() => [])
         ])
             .then(([shopData, catsData, prodsData]) => {
                 if (!shopData) {
-                    router.push(homeUrl); // Retour à la plateforme si boutique inexistante
+                    router.push(homeUrl);
                     return;
                 }
                 setShop(shopData);
@@ -73,24 +79,38 @@ export default function ShopStorefrontHomePage() {
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, [shop_slug, router]);
+    }, [shop_slug, activeCategoryId, activeSort, router, homeUrl]);
 
     if (!shop) return null;
 
     return (
         <>
-            {/*
-        AIGUILLAGE DYNAMIQUE :
-        Next.js appelle le bon composant visuel selon le choix de template du marchand.
-      */}
             {shop.theme_style === "MODERN" && (
-                <ModernHome shop={shop} categories={categories} products={products} />
+                <ModernCatalog
+                    shop={shop}
+                    categories={categories}
+                    products={products}
+                    activeCategoryId={activeCategoryId}
+                    activeSort={activeSort}
+                />
             )}
             {shop.theme_style === "MINIMALIST" && (
-                <MinimalistHome shop={shop} categories={categories} products={products} />
+                <MinimalistCatalog
+                    shop={shop}
+                    categories={categories}
+                    products={products}
+                    activeCategoryId={activeCategoryId}
+                    activeSort={activeSort}
+                />
             )}
             {shop.theme_style === "COLORFUL" && (
-                <ColorfulHome shop={shop} categories={categories} products={products} />
+                <ColorfulCatalog
+                    shop={shop}
+                    categories={categories}
+                    products={products}
+                    activeCategoryId={activeCategoryId}
+                    activeSort={activeSort}
+                />
             )}
         </>
     );

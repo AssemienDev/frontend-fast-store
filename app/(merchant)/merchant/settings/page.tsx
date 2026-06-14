@@ -54,6 +54,8 @@ export default function MerchantSettingsPage() {
         logo_url: "",
         primary_color: "#0F766E",
         seo_description: "",
+        default_payment_method: "ONLINE", // "ONLINE" | "CASH_ON_DELIVERY" | "PARTIAL_HYBRID"
+        down_payment_percentage: 0
     });
 
     const [whatsappPrefix, setWhatsappPrefix] = useState("+225");
@@ -101,6 +103,8 @@ export default function MerchantSettingsPage() {
                     logo_url: data.theme_settings?.logo_url || "",
                     primary_color: data.theme_settings?.primary_color || "#0F766E",
                     seo_description: data.seo_description || "",
+                    default_payment_method: data.default_payment_method || "ONLINE",
+                    down_payment_percentage: data.down_payment_percentage || 0,
                 });
 
                 setWhatsappPrefix(detectedPrefix);
@@ -415,6 +419,36 @@ export default function MerchantSettingsPage() {
                             />
                         </div>
                     )}
+
+                    {/* CONFIGURATION DE PAIEMENT SÉCURISÉ & ACOMPTE EN % (NOUVEAU) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                        <div>
+                            <label className="block text-[10px] font-black uppercase text-slate-700 tracking-wider mb-2">Méthode de paiement de la boutique</label>
+                            <select
+                                value={form.default_payment_method}
+                                onChange={(e) => setForm({ ...form, default_payment_method: e.target.value })}
+                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-700 focus:outline-none"
+                            >
+                                <option value="ONLINE">Paiement en ligne complet</option>
+                                <option value="CASH_ON_DELIVERY">Paiement 100% à la livraison (COD)</option>
+                                <option value="PARTIAL_HYBRID">Acompte en ligne + Reste à la livraison</option>
+                            </select>
+                        </div>
+
+                        {/* Saisie du pourcentage de l'acompte si l'option hybride est sélectionnée */}
+                        {form.default_payment_method === "PARTIAL_HYBRID" && (
+                            <div className="animate-fadeIn">
+                                <label className="block text-[10px] font-black uppercase text-slate-700 tracking-wider mb-2">Pourcentage de l&#39;acompte (%)</label>
+                                <input
+                                    type="number" required min={1} max={100}
+                                    value={form.down_payment_percentage}
+                                    onChange={(e) => setForm({ ...form, down_payment_percentage: parseFloat(e.target.value) || 0 })}
+                                    placeholder="Ex: 20 (pour 20% d'acompte)"
+                                    className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs md:text-sm text-slate-850 focus:outline-none focus:border-primary transition"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* CARD 5 : ADRESSE PHYSIQUE & DESCRIPTION RÉFÉRENCEMENT SEO */}
@@ -425,7 +459,7 @@ export default function MerchantSettingsPage() {
                     </div>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Adresse physique de l'entreprise</label>
+                            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Adresse physique de l&#39;entreprise</label>
                             <textarea
                                 rows={3} required value={form.address}
                                 onChange={(e) => setForm({ ...form, address: e.target.value })}
